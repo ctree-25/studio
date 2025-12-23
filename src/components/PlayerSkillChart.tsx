@@ -88,7 +88,7 @@ export function PlayerSkillChart({ feedback }: PlayerSkillChartProps) {
             content={<ChartTooltipContent indicator="line" />}
           />
           <PolarAngleAxis dataKey="skill" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-          <PolarRadiusAxis domain={[0, 10]} angle={30} stroke="hsl(var(--muted-foreground))" />
+          <PolarRadiusAxis domain={[0, 10]} angle={30} stroke="hsl(var(--muted-foreground))" axisLine={false} />
           <PolarGrid gridType='polygon' />
           <Radar
             dataKey="averageRating"
