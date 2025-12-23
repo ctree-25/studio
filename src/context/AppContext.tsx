@@ -31,24 +31,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 // Some mock data to make the coach view interesting from the start
 const MOCK_PLAYERS: PlayerProfile[] = [
     {
-        id: 'mock-player-1',
-        name: 'Alex Morgan',
-        position: 'Outside Hitter',
-        height: "6'1\"",
-        gradYear: '2025',
-        highlightVideo: null,
-        highlightVideoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-        targetLevel: 'D1',
-        preferredSchools: 'Stanford, UCLA',
-        submitted: true,
-        aiAnalysis: {
-            strengths: 'Powerful arm swing, excellent court vision, and high volleyball IQ. Strong jump serve with consistent accuracy.',
-            weaknesses: 'Defensive transitions could be quicker. Occasionally predictable with shot selection in high-pressure situations.',
-            overallAssessment: 'A top-tier D1 prospect with the potential to be an immediate impact player. Physicality and offensive skills are college-ready. Focusing on defensive speed and diversifying attack patterns will make them an all-around threat.'
-        },
-        coachFeedback: "Alex shows exceptional talent and has a very high ceiling. The AI analysis is spot on. I'd add that improving block timing against faster offenses will be crucial at the D1 level. We're definitely keeping an eye on them."
-    },
-    {
         id: 'mock-player-2',
         name: 'Jamie Tree',
         position: 'Setter',
@@ -88,9 +70,6 @@ Great potential. The raw skills are all there. Her hands are soft, and she has t
 - Decision Making: 8/10
 - Defense: 7/10
 - Serving: 6/10
-
-### Combined Feedback Overview:
-All coaches agree that Jamie has excellent hands, court awareness, and decision-making abilities, making her a high-potential D3 setter. Her background as an Outside Hitter is seen as a significant advantage, contributing to her strong defensive skills and offensive mindset. The consensus area for improvement is her footwork consistency and the development of a more aggressive, threatening serve.
         `
     }
 ];

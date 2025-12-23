@@ -3,13 +3,16 @@
 import { useAppContext } from "@/context/AppContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { PlayerSkillChart } from "@/components/PlayerSkillChart";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function PlayerFeedbackView() {
     const { players } = useAppContext();
     
     // In a real app, we'd get the current logged-in player.
-    // Here we just take the first non-mock player that has been submitted.
-    const myProfile = players.find(p => !p.id.startsWith('mock-') && p.submitted);
+    // Here we default to showing Jamie Tree's profile.
+    const myProfile = players.find(p => p.id === 'mock-player-2');
 
     if (!myProfile) {
         return (
@@ -19,25 +22,48 @@ export function PlayerFeedbackView() {
         );
     }
     
-    if (!myProfile.coachFeedback) {
-        return (
-            <div className="text-center text-muted-foreground py-8">
-                <p>No feedback received yet. Coaches are reviewing your profile, check back later!</p>
-            </div>
-        );
-    }
+    const coachAssessments = myProfile.coachFeedback?.split('###').filter(s => s.trim() !== '').map(s => s.trim());
+
 
     return (
         <div className="space-y-6">
-             <Card className="bg-card/50">
-                <CardHeader>
-                    <CardTitle className="text-lg">Feedback from a Coach</CardTitle>
-                    <CardDescription>This feedback has been provided anonymously.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="whitespace-pre-wrap">{myProfile.coachFeedback}</p>
-                </CardContent>
-            </Card>
+            {coachAssessments && coachAssessments.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg">Coach Assessments</CardTitle>
+                        <CardDescription>This feedback has been provided anonymously by college coaches.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {coachAssessments.map((assessment, index) => (
+                           <div key={index}>
+                             <p
+                                className="whitespace-pre-wrap text-muted-foreground"
+                                dangerouslySetInnerHTML={{
+                                    __html: assessment
+                                        .replace(/(\w+ Assessment:)/g, '<strong class="text-primary">$1</strong>')
+                                        .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
+                                }}
+                             />
+                             {index < coachAssessments.length - 1 && <Separator className="my-4" />}
+                           </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
+
+            {myProfile.id === 'mock-player-2' && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Skill Assessment</CardTitle>
+                    <CardDescription>Aggregated from coach feedback.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
+                      <PlayerSkillChart feedback={myProfile.coachFeedback} />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+              )}
 
             {myProfile.aiAnalysis && (
                 <Card>
