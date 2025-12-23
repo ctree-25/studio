@@ -9,12 +9,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function PlayerReviewPage({ params }: { params: { id: string } }) {
+  const resolvedParams = use(params);
   const { getPlayer, updatePlayer } = useAppContext();
-  const player = getPlayer(params.id);
+  const player = getPlayer(resolvedParams.id);
   const [feedback, setFeedback] = useState(player?.coachFeedback || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
