@@ -132,7 +132,14 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                     <CardContent className="space-y-6">
                         {coachAssessments.map((assessment, index) => (
                            <div key={index}>
-                             <p className="whitespace-pre-wrap text-muted-foreground">{assessment.replace(/(\w+ Assessment:)/, '<strong class="text-primary">$1</strong>').split('\n').map((line, i) => <span key={i} dangerouslySetInnerHTML={{__html: line.replace(/- (\w+ \w+): (\d+\/\d+)/, '- <strong>$1:</strong> $2')}}><br/></span>)}</p>
+                             <p
+                                className="whitespace-pre-wrap text-muted-foreground"
+                                dangerouslySetInnerHTML={{
+                                    __html: assessment
+                                        .replace(/(\w+ Assessment:)/g, '<strong class="text-primary">$1</strong>')
+                                        .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
+                                }}
+                             />
                              {index < coachAssessments.length - 1 && <Separator className="my-4" />}
                            </div>
                         ))}
