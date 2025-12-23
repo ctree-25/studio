@@ -24,9 +24,22 @@ export function PlayerFeedbackView() {
     
     const coachAssessments = myProfile.coachFeedback?.split('###').filter(s => s.trim() !== '').map(s => s.trim());
 
-
     return (
         <div className="space-y-6">
+             {myProfile.id === 'mock-player-2' && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Skill Assessment</CardTitle>
+                    <CardDescription>Aggregated from coach feedback.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
+                      <PlayerSkillChart feedback={myProfile.coachFeedback} />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+              )}
+
             {coachAssessments && coachAssessments.length > 0 && (
                 <Card>
                     <CardHeader>
@@ -50,20 +63,6 @@ export function PlayerFeedbackView() {
                     </CardContent>
                 </Card>
             )}
-
-            {myProfile.id === 'mock-player-2' && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Skill Assessment</CardTitle>
-                    <CardDescription>Aggregated from coach feedback.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
-                      <PlayerSkillChart feedback={myProfile.coachFeedback} />
-                    </Suspense>
-                  </CardContent>
-                </Card>
-              )}
 
             {myProfile.aiAnalysis && (
                 <Card>

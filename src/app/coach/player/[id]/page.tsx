@@ -41,8 +41,6 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
     }, 1000);
   }
 
-  const coachAssessments = player.coachFeedback?.split('###').filter(s => s.trim() !== '').map(s => s.trim());
-
   return (
     <div className="flex flex-col min-h-screen">
       <AppHeader />
@@ -123,48 +121,38 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                   </CardContent>
                 </Card>
               )}
-
-              {coachAssessments && coachAssessments.length > 1 ? (
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Coach Assessments</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {coachAssessments.map((assessment, index) => (
-                           <div key={index}>
-                             <p
-                                className="whitespace-pre-wrap text-muted-foreground"
-                                dangerouslySetInnerHTML={{
-                                    __html: assessment
-                                        .replace(/(\w+ Assessment:)/g, '<strong class="text-primary">$1</strong>')
-                                        .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
-                                }}
-                             />
-                             {index < coachAssessments.length - 1 && <Separator className="my-4" />}
-                           </div>
-                        ))}
-                    </CardContent>
-                 </Card>
-              ) : (
+              
                 <Card>
                     <CardHeader>
                     <CardTitle>Your Feedback</CardTitle>
                     <CardDescription>Provide your assessment for the player.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                    <Textarea 
-                        value={feedback}
-                        onChange={(e) => setFeedback(e.target.value)}
-                        placeholder="Provide your constructive feedback here..." 
-                        rows={8}
-                        className="resize-y"
-                    />
-                    <Button onClick={handleSubmit} disabled={isSubmitting || !feedback} className="w-full">
-                        {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
-                    </Button>
+                      {player.coachFeedback ? (
+                        <p
+                          className="whitespace-pre-wrap text-muted-foreground"
+                          dangerouslySetInnerHTML={{
+                              __html: player.coachFeedback
+                                  .replace(/(\w+ Assessment:)/g, '<strong class="text-primary">$1</strong>')
+                                  .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
+                          }}
+                        />
+                      ) : (
+                        <>
+                          <Textarea 
+                              value={feedback}
+                              onChange={(e) => setFeedback(e.target.value)}
+                              placeholder="No feedback submitted yet. Provide your constructive feedback here..." 
+                              rows={8}
+                              className="resize-y"
+                          />
+                          <Button onClick={handleSubmit} disabled={isSubmitting || !feedback} className="w-full">
+                              {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                          </Button>
+                        </>
+                      )}
                     </CardContent>
                 </Card>
-              )}
             </div>
           </div>
         </div>
