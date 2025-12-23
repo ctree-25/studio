@@ -2,6 +2,9 @@
 
 import type { AnalyzePlayerFootageOutput } from '@/ai/flows/analyze-player-footage';
 import { type ReactNode, createContext, useContext, useState } from 'react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+
+const playerAvatar = PlaceHolderImages.find(p => p.id === 'player-avatar');
 
 export type PlayerProfile = {
   id: string;
@@ -9,6 +12,7 @@ export type PlayerProfile = {
   position: string;
   height: string;
   gradYear: string;
+  profilePictureUrl?: string;
   highlightVideo: File | null;
   highlightVideoUrl?: string;
   videoDataUri?: string;
@@ -22,7 +26,7 @@ export type PlayerProfile = {
 type AppContextType = {
   players: PlayerProfile[];
   getPlayer: (id: string) => PlayerProfile | undefined;
-  addPlayer: (player: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'highlightVideoUrl' | 'videoDataUri'>) => PlayerProfile;
+  addPlayer: (player: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'highlightVideoUrl' | 'videoDataUri' | 'profilePictureUrl'>) => PlayerProfile;
   updatePlayer: (playerId: string, updates: Partial<PlayerProfile>) => void;
 };
 
@@ -36,6 +40,7 @@ const MOCK_PLAYERS: PlayerProfile[] = [
         position: 'Setter',
         height: "5'9\"",
         gradYear: '2027',
+        profilePictureUrl: playerAvatar?.imageUrl,
         highlightVideo: null,
         highlightVideoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4',
         targetLevel: 'D3',
@@ -59,7 +64,7 @@ Jamie has fantastic hands and a natural feel for the game. Her hitter background
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [players, setPlayers] = useState<PlayerProfile[]>(MOCK_PLAYERS);
 
-  const addPlayer = (playerData: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'highlightVideoUrl' | 'videoDataUri'>): PlayerProfile => {
+  const addPlayer = (playerData: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'highlightVideoUrl' | 'videoDataUri' | 'profilePictureUrl'>): PlayerProfile => {
     const newPlayer: PlayerProfile = {
         ...playerData,
         id: `player-${Date.now()}`,

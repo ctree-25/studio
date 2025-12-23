@@ -13,12 +13,17 @@ import { analyzePlayerFootage } from '@/ai/flows/analyze-player-footage';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+
+const playerAvatar = PlaceHolderImages.find((p) => p.id === 'player-avatar');
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   position: z.string().min(2, { message: 'Position is required.' }),
   height: z.string().min(2, { message: 'Height is required.' }),
   gradYear: z.string().min(4, { message: 'Valid graduation year is required.' }),
+  profilePicture: z.any().refine(file => file instanceof File, 'Profile picture is required.'),
   targetLevel: z.enum(['D1', 'D2', 'D3'], { required_error: 'Target level is required.' }),
   preferredSchools: z.string().min(3, { message: 'Please list at least one school.' }),
   highlightVideo: z.any().refine(file => file instanceof File, 'Highlight video is required.'),
@@ -29,7 +34,8 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 export function PlayerProfileForm() {
   const { addPlayer, updatePlayer } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
-  const [fileName, setFileName] = useState('');
+  const [videoFileName, setVideoFileName] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState(playerAvatar?.imageUrl || '');
   const { toast } = useToast();
 
   const form = useForm<ProfileFormValues>({
@@ -59,11 +65,19 @@ export function PlayerProfileForm() {
     });
 
     try {
-      const newPlayer = addPlayer(data);
-      const videoDataUri = await toBase64(data.highlightVideo);
+      const { profilePicture, highlightVideo, ...playerData } = data;
+      const newPlayer = addPlayer({ ...playerData, highlightVideo: null });
       
-      const objectUrl = URL.createObjectURL(data.highlightVideo);
-      updatePlayer(newPlayer.id, { highlightVideoUrl: objectUrl, videoDataUri: videoDataUri as string });
+      const videoDataUri = await toBase64(highlightVideo);
+      const videoObjectUrl = URL.createObjectURL(highlightVideo);
+
+      const pictureObjectUrl = URL.createObjectURL(profilePicture);
+
+      updatePlayer(newPlayer.id, { 
+        highlightVideoUrl: videoObjectUrl, 
+        videoDataUri: videoDataUri as string,
+        profilePictureUrl: pictureObjectUrl
+      });
       
       const analysisResult = await analyzePlayerFootage({
         videoDataUri: videoDataUri as string,
@@ -81,7 +95,8 @@ export function PlayerProfileForm() {
         description: 'Your profile and AI analysis are now available for coaches to review.',
       });
       form.reset();
-      setFileName('');
+      setVideoFileName('');
+      setAvatarPreview(playerAvatar?.imageUrl || '');
     } catch (error) {
       console.error('Failed to process profile:', error);
       toast({
@@ -97,6 +112,43 @@ export function PlayerProfileForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="profilePicture"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Profile Picture</FormLabel>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={avatarPreview} data-ai-hint="volleyball player" />
+                  <AvatarFallback>PFP</AvatarFallback>
+                </Avatar>
+                <FormControl>
+                    <div className="relative">
+                        <Input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden"
+                            id="pfp-upload"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if(file) {
+                                    field.onChange(file);
+                                    setAvatarPreview(URL.createObjectURL(file));
+                                }
+                            }}
+                        />
+                        <label htmlFor="pfp-upload" className="flex items-center justify-center px-3 py-2 text-sm border-2 border-dashed rounded-md cursor-pointer border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                            <Upload className="w-4 h-4 mr-2"/>
+                            <span>Click to upload a picture</span>
+                        </label>
+                    </div>
+                </FormControl>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormField
               control={form.control}
@@ -207,13 +259,13 @@ export function PlayerProfileForm() {
                             const file = e.target.files?.[0];
                             if(file) {
                                 field.onChange(file);
-                                setFileName(file.name);
+                                setVideoFileName(file.name);
                             }
                         }}
                     />
                     <label htmlFor="file-upload" className="flex items-center justify-center w-full px-3 py-2 text-sm border-2 border-dashed rounded-md cursor-pointer border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
                         <Upload className="w-4 h-4 mr-2"/>
-                        <span>{fileName || 'Click to upload a video'}</span>
+                        <span>{videoFileName || 'Click to upload a video'}</span>
                     </label>
                 </div>
               </FormControl>

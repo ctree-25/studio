@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { CheckCircle, Clock, Dot, User, MapPin, BarChart2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function CoachDashboard() {
   const { players } = useAppContext();
@@ -32,14 +33,18 @@ export default function CoachDashboard() {
               {submittedPlayers.map((player) => (
                 <Card key={player.id} className="flex flex-col">
                   <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16">
+                            <AvatarImage src={player.profilePictureUrl} data-ai-hint="volleyball player"/>
+                            <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
                             <CardTitle>{player.name}</CardTitle>
                             <CardDescription className="flex items-center">
                                 {player.position} <Dot /> Graduating {player.gradYear}
                             </CardDescription>
                         </div>
-                        <div className={`flex items-center text-xs px-2 py-1 rounded-full ${player.coachFeedback ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                         <div className={`flex items-center text-xs px-2 py-1 rounded-full self-start ${player.coachFeedback ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                             {player.coachFeedback ? <CheckCircle className="w-3 h-3 mr-1"/> : <Clock className="w-3 h-3 mr-1"/>}
                             {player.coachFeedback ? 'Reviewed' : 'Pending'}
                         </div>

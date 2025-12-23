@@ -1,0 +1,10 @@
+{
+  "placeholderImages": [
+    {
+      "id": "player-avatar",
+      "description": "A portrait of a volleyball player.",
+      "imageUrl": "https://picsum.photos/seed/player-avatar/400/400",
+      "imageHint": "volleyball player"
+    }
+  ]
+}

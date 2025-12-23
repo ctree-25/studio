@@ -13,6 +13,7 @@ import { useState, use } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const SKILLS = ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'];
 
@@ -39,12 +40,13 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
   const handleSubmit = () => {
     setIsSubmitting(true);
     
+    // In a real app with multiple coaches, you'd likely want to append feedback from a specific coach.
+    // Here, we just overwrite it for simplicity.
     const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
-    const fullFeedback = `Coach Assessment:\n${feedback}\n${skillRatingsText}`;
+    const fullFeedback = `Coach Assessment:\n${feedback}\n\nSkill Ratings:\n${skillRatingsText}`;
 
     // Simulate API call
     setTimeout(() => {
-        // In a real app, this would likely append feedback, not just replace it.
         updatePlayer(player.id, { coachFeedback: fullFeedback });
         setIsSubmitting(false);
         toast({
@@ -69,9 +71,15 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-8">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl font-headline">{player.name}</CardTitle>
-                  <CardDescription>{player.position}</CardDescription>
+                <CardHeader className='flex-row items-center gap-4'>
+                    <Avatar className="h-20 w-20">
+                        <AvatarImage src={player.profilePictureUrl} data-ai-hint="volleyball player"/>
+                        <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <CardTitle className="text-2xl font-headline">{player.name}</CardTitle>
+                        <CardDescription>{player.position}</CardDescription>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center"><Ruler className="w-4 h-4 mr-2 text-muted-foreground"/> Height: {player.height}</div>
@@ -126,20 +134,15 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                 <Card>
                     <CardHeader>
                     <CardTitle>Your Feedback</CardTitle>
-                    <CardDescription>Provide your assessment for the player. Your previous feedback is shown for context, but submitting new feedback will overwrite it.</CardDescription>
+                    <CardDescription>Provide your assessment for the player. Submitting new feedback will overwrite your previous feedback.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {player.coachFeedback && (
                         <div className="p-4 border rounded-md bg-muted/50">
-                            <h4 className='font-semibold mb-2'>Previous Feedback</h4>
-                            <p
-                            className="whitespace-pre-wrap text-muted-foreground"
-                            dangerouslySetInnerHTML={{
-                                __html: player.coachFeedback
-                                    .replace(/(\w+ Assessment:)/g, '<strong class="text-primary">$1</strong>')
-                                    .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
-                            }}
-                            />
+                            <h4 className='font-semibold mb-2'>Your Previous Feedback</h4>
+                            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                                {player.coachFeedback}
+                            </p>
                         </div>
                       )}
                       
