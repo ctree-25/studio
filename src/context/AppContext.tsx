@@ -46,31 +46,13 @@ const MOCK_PLAYERS: PlayerProfile[] = [
             weaknesses: 'Footwork to the ball can be inconsistent, especially on out-of-system plays. Serve could be more aggressive to put opponents on the defensive.',
             overallAssessment: 'A high-potential D3 setter with a great foundation. Her experience as a hitter is a significant asset. With refined footwork and a more aggressive serve, she could become a top-tier setter at the D3 level. Her coachability and on-court leadership are evident.'
         },
-        coachFeedback: `
-### Coach A Assessment:
+        coachFeedback: `Coach Assessment:
 Jamie has fantastic hands and a natural feel for the game. Her hitter background is obvious in her smart set choices. To elevate her game for the collegiate level, we need to focus on consistent footwork to get her body in position for every set, not just the perfect passes. I'd rate her skills as:
 - Setting Technique: 8/10
 - Footwork: 6/10
 - Decision Making: 8/10
 - Defense: 7/10
-- Serving: 6/10
-
-### Coach B Assessment:
-A very promising setter. Her ability to transition from defense to setting is a major plus. I agree that her footwork is the primary area for improvement. I'd also like to see her develop a more varied serving arsenal—a tough float or a targeted jump-float would make her an even bigger threat. Her positive attitude is a huge plus. My ratings:
-- Setting Technique: 8/10
-- Footwork: 7/10
-- Decision Making: 9/10
-- Defense: 8/10
-- Serving: 5/10
-
-### Coach C Assessment:
-Great potential. The raw skills are all there. Her hands are soft, and she has the court awareness you can't teach. The transition from OH is a great story and shows her versatility. The focus should be on repetition and discipline in her footwork patterns. Her serve is consistent but lacks pressure. With some work, she can be a cornerstone player for a strong D3 program.
-- Setting Technique: 9/10
-- Footwork: 6/10
-- Decision Making: 8/10
-- Defense: 7/10
-- Serving: 6/10
-        `
+- Serving: 6/10`
     }
 ];
 

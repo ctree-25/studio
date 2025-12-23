@@ -9,16 +9,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import { useState, use, Suspense } from 'react';
+import { useState, use } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { PlayerSkillChart } from '@/components/PlayerSkillChart';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+
+const SKILLS = ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'];
 
 export default function PlayerReviewPage({ params }: { params: { id: string } }) {
   const resolvedParams = use(params);
   const { getPlayer, updatePlayer } = useAppContext();
   const player = getPlayer(resolvedParams.id);
-  const [feedback, setFeedback] = useState(player?.coachFeedback || '');
+  const [feedback, setFeedback] = useState('');
+  const [skillRatings, setSkillRatings] = useState<Record<string, number>>(() => 
+    SKILLS.reduce((acc, skill) => ({ ...acc, [skill]: 5 }), {})
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -27,11 +32,20 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
     notFound();
   }
   
+  const handleSliderChange = (skill: string, value: number[]) => {
+    setSkillRatings(prev => ({...prev, [skill]: value[0]}));
+  }
+
   const handleSubmit = () => {
     setIsSubmitting(true);
+    
+    const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
+    const fullFeedback = `Coach Assessment:\n${feedback}\n${skillRatingsText}`;
+
     // Simulate API call
     setTimeout(() => {
-        updatePlayer(player.id, { coachFeedback: feedback });
+        // In a real app, this would likely append feedback, not just replace it.
+        updatePlayer(player.id, { coachFeedback: fullFeedback });
         setIsSubmitting(false);
         toast({
             title: 'Feedback Submitted',
@@ -81,19 +95,6 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                   </CardContent>
                 </Card>
               )}
-               {player.id === 'mock-player-2' && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Skill Assessment</CardTitle>
-                    <CardDescription>Aggregated from coach feedback.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
-                      <PlayerSkillChart feedback={player.coachFeedback} />
-                    </Suspense>
-                  </CardContent>
-                </Card>
-              )}
             </div>
 
             <div className="space-y-8">
@@ -125,32 +126,54 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                 <Card>
                     <CardHeader>
                     <CardTitle>Your Feedback</CardTitle>
-                    <CardDescription>Provide your assessment for the player.</CardDescription>
+                    <CardDescription>Provide your assessment for the player. Your previous feedback is shown for context, but submitting new feedback will overwrite it.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {player.coachFeedback ? (
-                        <p
-                          className="whitespace-pre-wrap text-muted-foreground"
-                          dangerouslySetInnerHTML={{
-                              __html: player.coachFeedback
-                                  .replace(/(\w+ Assessment:)/g, '<strong class="text-primary">$1</strong>')
-                                  .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
-                          }}
-                        />
-                      ) : (
-                        <>
-                          <Textarea 
-                              value={feedback}
-                              onChange={(e) => setFeedback(e.target.value)}
-                              placeholder="No feedback submitted yet. Provide your constructive feedback here..." 
-                              rows={8}
-                              className="resize-y"
-                          />
-                          <Button onClick={handleSubmit} disabled={isSubmitting || !feedback} className="w-full">
-                              {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
-                          </Button>
-                        </>
+                      {player.coachFeedback && (
+                        <div className="p-4 border rounded-md bg-muted/50">
+                            <h4 className='font-semibold mb-2'>Previous Feedback</h4>
+                            <p
+                            className="whitespace-pre-wrap text-muted-foreground"
+                            dangerouslySetInnerHTML={{
+                                __html: player.coachFeedback
+                                    .replace(/(\w+ Assessment:)/g, '<strong class="text-primary">$1</strong>')
+                                    .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
+                            }}
+                            />
+                        </div>
                       )}
+                      
+                      <div className="space-y-4 pt-4">
+                        <Textarea 
+                            value={feedback}
+                            onChange={(e) => setFeedback(e.target.value)}
+                            placeholder="Provide your constructive feedback here..." 
+                            rows={5}
+                            className="resize-y"
+                        />
+                        <div className="space-y-6">
+                            <h4 className="font-semibold">Skill Ratings</h4>
+                            {SKILLS.map(skill => (
+                                <div key={skill} className="grid gap-2">
+                                    <div className="flex justify-between items-center">
+                                        <Label htmlFor={`slider-${skill}`}>{skill}</Label>
+                                        <span className="text-sm font-medium text-primary w-8 text-center">{skillRatings[skill]}</span>
+                                    </div>
+                                    <Slider
+                                        id={`slider-${skill}`}
+                                        min={1}
+                                        max={10}
+                                        step={1}
+                                        value={[skillRatings[skill]]}
+                                        onValueChange={(value) => handleSliderChange(skill, value)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        <Button onClick={handleSubmit} disabled={isSubmitting || !feedback} className="w-full">
+                            {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                        </Button>
+                      </div>
                     </CardContent>
                 </Card>
             </div>

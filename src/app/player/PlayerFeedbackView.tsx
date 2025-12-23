@@ -26,7 +26,7 @@ export function PlayerFeedbackView() {
 
     return (
         <div className="space-y-6">
-             {myProfile.id === 'mock-player-2' && (
+             {myProfile.coachFeedback && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Skill Assessment</CardTitle>
