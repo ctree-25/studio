@@ -47,6 +47,51 @@ const MOCK_PLAYERS: PlayerProfile[] = [
             overallAssessment: 'A top-tier D1 prospect with the potential to be an immediate impact player. Physicality and offensive skills are college-ready. Focusing on defensive speed and diversifying attack patterns will make them an all-around threat.'
         },
         coachFeedback: "Alex shows exceptional talent and has a very high ceiling. The AI analysis is spot on. I'd add that improving block timing against faster offenses will be crucial at the D1 level. We're definitely keeping an eye on them."
+    },
+    {
+        id: 'mock-player-2',
+        name: 'Jamie Tree',
+        position: 'Setter',
+        height: "5'9\"",
+        gradYear: '2027',
+        highlightVideo: null,
+        highlightVideoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4',
+        targetLevel: 'D3',
+        preferredSchools: 'Tufts, MIT, Williams',
+        submitted: true,
+        aiAnalysis: {
+            strengths: 'Exceptional hands and clean delivery. Reads blockers well and makes smart decisions under pressure. Background as an Outside Hitter gives her an offensive mindset and strong defensive skills.',
+            weaknesses: 'Footwork to the ball can be inconsistent, especially on out-of-system plays. Serve could be more aggressive to put opponents on the defensive.',
+            overallAssessment: 'A high-potential D3 setter with a great foundation. Her experience as a hitter is a significant asset. With refined footwork and a more aggressive serve, she could become a top-tier setter at the D3 level. Her coachability and on-court leadership are evident.'
+        },
+        coachFeedback: `
+### Coach A Assessment:
+Jamie has fantastic hands and a natural feel for the game. Her hitter background is obvious in her smart set choices. To elevate her game for the collegiate level, we need to focus on consistent footwork to get her body in position for every set, not just the perfect passes. I'd rate her skills as:
+- Setting Technique: 8/10
+- Footwork: 6/10
+- Decision Making: 8/10
+- Defense: 7/10
+- Serving: 6/10
+
+### Coach B Assessment:
+A very promising setter. Her ability to transition from defense to setting is a major plus. I agree that her footwork is the primary area for improvement. I'd also like to see her develop a more varied serving arsenal—a tough float or a targeted jump-float would make her an even bigger threat. Her positive attitude is a huge plus. My ratings:
+- Setting Technique: 8/10
+- Footwork: 7/10
+- Decision Making: 9/10
+- Defense: 8/10
+- Serving: 5/10
+
+### Coach C Assessment:
+Great potential. The raw skills are all there. Her hands are soft, and she has the court awareness you can't teach. The transition from OH is a great story and shows her versatility. The focus should be on repetition and discipline in her footwork patterns. Her serve is consistent but lacks pressure. With some work, she can be a cornerstone player for a strong D3 program.
+- Setting Technique: 9/10
+- Footwork: 6/10
+- Decision Making: 8/10
+- Defense: 7/10
+- Serving: 6/10
+
+### Combined Feedback Overview:
+All coaches agree that Jamie has excellent hands, court awareness, and decision-making abilities, making her a high-potential D3 setter. Her background as an Outside Hitter is seen as a significant advantage, contributing to her strong defensive skills and offensive mindset. The consensus area for improvement is her footwork consistency and the development of a more aggressive, threatening serve.
+        `
     }
 ];
 
@@ -65,7 +110,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const getPlayer = (id: string) => {
     return players.find(p => p.id === id);
-  }
+  };
 
   const updatePlayer = (playerId: string, updates: Partial<PlayerProfile>) => {
     setPlayers(prev => prev.map(p => (p.id === playerId ? { ...p, ...updates } : p)));
