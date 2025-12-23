@@ -40,7 +40,7 @@ export function PlayerFeedbackView() {
                   </CardHeader>
                   <CardContent>
                     {myProfile.coachFeedback ? (
-                         <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
+                         <Suspense fallback={<Skeleton className="w-full h-[450px]" />}>
                             <PlayerSkillChart feedback={myProfile.coachFeedback} />
                          </Suspense>
                     ): (
