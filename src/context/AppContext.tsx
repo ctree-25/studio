@@ -57,23 +57,7 @@ Jamie has fantastic hands and a natural feel for the game. Her hitter background
 - Footwork: 6/10
 - Decision Making: 8/10
 - Defense: 7/10
-- Serving: 6/10
-###
-Coach Assessment:
-Good court awareness and composure. She communicates well with her hitters. Her defensive positioning is solid, but she could be more explosive in her lateral movements to cover more ground. The potential is definitely there.
-- Setting Technique: 9/10
-- Footwork: 7/10
-- Decision Making: 7/10
-- Defense: 8/10
-- Serving: 7/10
-###
-Coach Assessment:
-A very coachable player with a high ceiling. Her sets are consistent, but could benefit from varying the tempo more to keep blockers off-balance. Her serve is reliable but lacks the power to consistently score points.
-- Setting Technique: 8/10
-- Footwork: 8/10
-- Decision Making: 7/10
-- Defense: 7/10
-- Serving: 5/10`
+- Serving: 6/10`
     }
 ];
 

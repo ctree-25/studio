@@ -18,7 +18,7 @@ export default function CoachDashboard() {
       <main className="flex-1 p-4 md:p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold font-headline">Player Dashboard</h1>
+            <h1 className="text-3xl font-bold font-headline">Coach Dashboard</h1>
             <p className="text-muted-foreground">Review profiles of prospective student-athletes.</p>
           </div>
 

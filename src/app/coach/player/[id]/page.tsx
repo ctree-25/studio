@@ -141,7 +141,7 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                         <div className="p-4 border rounded-md bg-muted/50">
                             <h4 className='font-semibold mb-2'>Your Previous Feedback</h4>
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                                {player.coachFeedback}
+                                {player.coachFeedback.split('###')[0]}
                             </p>
                         </div>
                       )}
