@@ -27,7 +27,7 @@ export function PlayerFeedbackView() {
 
     return (
         <Tabs defaultValue="skill-assessment" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-3 h-auto">
                 <TabsTrigger value="skill-assessment" className="whitespace-normal h-auto">Skill Assessment</TabsTrigger>
                 <TabsTrigger value="coach-feedback" className="whitespace-normal h-auto">Coach Feedback</TabsTrigger>
                 <TabsTrigger value="ai-analysis" className="whitespace-normal h-auto">AI Analysis</TabsTrigger>
