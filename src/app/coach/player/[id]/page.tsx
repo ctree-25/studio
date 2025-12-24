@@ -4,8 +4,6 @@ import { AppHeader } from '@/components/AppHeader';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
@@ -14,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Textarea } from '@/components/ui/textarea';
 
 const SKILLS = ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'];
 
@@ -47,6 +46,8 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
 
     // Simulate API call
     setTimeout(() => {
+        // In a multi-coach system, this might use '###' to separate reports.
+        // For this view, we want to show only one, so we overwrite or prepend.
         updatePlayer(player.id, { coachFeedback: fullFeedback });
         setIsSubmitting(false);
         toast({
@@ -56,6 +57,9 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
         router.push('/coach');
     }, 1000);
   }
+
+  // Show just the first feedback entry for the coach's own review
+  const firstFeedback = player.coachFeedback?.split('###')[0].trim();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -106,42 +110,17 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
             </div>
 
             <div className="space-y-8">
-              {player.aiAnalysis && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>AI-Powered Analysis</CardTitle>
-                    <CardDescription>Generated from player's footage.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold text-primary">Strengths</h4>
-                      <p className="text-muted-foreground">{player.aiAnalysis.strengths}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <h4 className="font-semibold text-primary">Areas for Improvement</h4>
-                      <p className="text-muted-foreground">{player.aiAnalysis.weaknesses}</p>
-                    </div>
-                    <Separator />
-                    <div>
-                      <h4 className="font-semibold text-primary">Overall Assessment</h4>
-                      <p className="text-muted-foreground">{player.aiAnalysis.overallAssessment}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
                 <Card>
                     <CardHeader>
                     <CardTitle>Your Feedback</CardTitle>
                     <CardDescription>Provide your assessment for the player. Submitting new feedback will overwrite your previous feedback.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {player.coachFeedback && (
+                      {firstFeedback && (
                         <div className="p-4 border rounded-md bg-muted/50">
                             <h4 className='font-semibold mb-2'>Your Previous Feedback</h4>
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                                {player.coachFeedback.split('###')[0]}
+                                {firstFeedback}
                             </p>
                         </div>
                       )}

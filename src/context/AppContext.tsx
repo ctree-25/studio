@@ -57,7 +57,23 @@ Jamie has fantastic hands and a natural feel for the game. Her hitter background
 - Footwork: 6/10
 - Decision Making: 8/10
 - Defense: 7/10
-- Serving: 6/10`
+- Serving: 6/10
+###
+Coach Assessment:
+Shows great potential. Her athleticism stands out, and she has a high volleyball IQ. I'd like to see her work on the speed of her sets to the pins and develop a more deceptive dump shot. Her defensive hustle is top-notch.
+- Setting Technique: 7/10
+- Footwork: 7/10
+- Decision Making: 9/10
+- Defense: 8/10
+- Serving: 7/10
+###
+Coach Assessment:
+A solid all-around player with a strong foundation. Her serves are consistent but could be more aggressive. She has good court awareness and communicates well with her hitters. Improving her blocking footwork would make her a more formidable presence at the net.
+- Setting Technique: 9/10
+- Footwork: 8/10
+- Decision Making: 7/10
+- Defense: 6/10
+- Serving: 7/10`
     }
 ];
 
