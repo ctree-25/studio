@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "CourtConnect",
-  description: "Connecting high school volleyball players with college coaches.",
+  description: "Get expert feedback on your volleyball skills.",
 };
 
 export default function RootLayout({

@@ -19,14 +19,14 @@ export default function CoachDashboard() {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold font-headline">Coach Dashboard</h1>
-            <p className="text-muted-foreground">Review profiles of prospective student-athletes.</p>
+            <p className="text-muted-foreground">Review player profiles and provide evaluations.</p>
           </div>
 
           {submittedPlayers.length === 0 ? (
             <div className="text-center py-16 border-2 border-dashed rounded-lg">
                 <User className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-2 text-sm font-semibold">No player profiles submitted</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Check back later to find new talent.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Check back later to find new players to evaluate.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

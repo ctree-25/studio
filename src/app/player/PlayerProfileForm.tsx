@@ -12,7 +12,7 @@ import { useAppContext } from '@/context/AppContext';
 import { analyzePlayerFootage } from '@/ai/flows/analyze-player-footage';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, Upload, Link as LinkIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -26,7 +26,7 @@ const profileFormSchema = z.object({
   profilePicture: z.any().refine(file => file instanceof File, 'Profile picture is required.'),
   targetLevel: z.enum(['D1', 'D2', 'D3'], { required_error: 'Target level is required.' }),
   preferredSchools: z.string().min(3, { message: 'Please list at least one school.' }),
-  highlightVideo: z.any().refine(file => file instanceof File, 'Highlight video is required.'),
+  highlightVideoUrl: z.string().url({ message: 'Please enter a valid video URL.' }),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -34,7 +34,6 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 export function PlayerProfileForm() {
   const { addPlayer, updatePlayer } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
-  const [videoFileName, setVideoFileName] = useState('');
   const [avatarPreview, setAvatarPreview] = useState(playerAvatar?.imageUrl || '');
   const { toast } = useToast();
 
@@ -46,6 +45,7 @@ export function PlayerProfileForm() {
       height: '',
       gradYear: '',
       preferredSchools: '',
+      highlightVideoUrl: '',
     },
   });
 
@@ -65,22 +65,23 @@ export function PlayerProfileForm() {
     });
 
     try {
-      const { profilePicture, highlightVideo, ...playerData } = data;
-      const newPlayer = addPlayer({ ...playerData, highlightVideo: null });
-      
-      const videoDataUri = await toBase64(highlightVideo);
-      const videoObjectUrl = URL.createObjectURL(highlightVideo);
+      // Since there is no video to upload and get a data URI from,
+      // we'll use a placeholder for the AI analysis call. In a real app,
+      // you might fetch the video from the URL server-side.
+      const placeholderVideoDataUri = 'data:video/mp4;base64,';
 
+      const { profilePicture, ...playerData } = data;
+      const newPlayer = addPlayer(playerData);
+      
       const pictureObjectUrl = URL.createObjectURL(profilePicture);
 
       updatePlayer(newPlayer.id, { 
-        highlightVideoUrl: videoObjectUrl, 
-        videoDataUri: videoDataUri as string,
-        profilePictureUrl: pictureObjectUrl
+        profilePictureUrl: pictureObjectUrl,
+        videoDataUri: placeholderVideoDataUri
       });
       
       const analysisResult = await analyzePlayerFootage({
-        videoDataUri: videoDataUri as string,
+        videoDataUri: placeholderVideoDataUri,
         targetLevel: data.targetLevel,
         preferredSchools: data.preferredSchools,
       });
@@ -95,7 +96,6 @@ export function PlayerProfileForm() {
         description: 'Your profile and AI analysis are now available for coaches to review.',
       });
       form.reset();
-      setVideoFileName('');
       setAvatarPreview(playerAvatar?.imageUrl || '');
     } catch (error) {
       console.error('Failed to process profile:', error);
@@ -244,29 +244,14 @@ export function PlayerProfileForm() {
         />
         <FormField
           control={form.control}
-          name="highlightVideo"
+          name="highlightVideoUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Highlight Footage</FormLabel>
+              <FormLabel>Highlight Video Link</FormLabel>
               <FormControl>
                 <div className="relative">
-                    <Input 
-                        type="file" 
-                        accept="video/*" 
-                        className="hidden"
-                        id="file-upload"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if(file) {
-                                field.onChange(file);
-                                setVideoFileName(file.name);
-                            }
-                        }}
-                    />
-                    <label htmlFor="file-upload" className="flex items-center justify-center w-full px-3 py-2 text-sm border-2 border-dashed rounded-md cursor-pointer border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-                        <Upload className="w-4 h-4 mr-2"/>
-                        <span>{videoFileName || 'Click to upload a video'}</span>
-                    </label>
+                    <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="https://youtube.com/watch?v=..." {...field} className="pl-10" />
                 </div>
               </FormControl>
               <FormMessage />

@@ -15,7 +15,7 @@ const AnalyzePlayerFootageInputSchema = z.object({
   videoDataUri: z
     .string()
     .describe(
-      "A video of a volleyball player, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A video of a volleyball player, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'. Can be a placeholder if only a URL is available."
     ),
   targetLevel: z
     .enum(['D1', 'D2', 'D3'])
@@ -43,16 +43,16 @@ const analyzePlayerFootagePrompt = ai.definePrompt({
   name: 'analyzePlayerFootagePrompt',
   input: {schema: AnalyzePlayerFootageInputSchema},
   output: {schema: AnalyzePlayerFootageOutputSchema},
-  prompt: `You are an expert volleyball coach analyzing player highlight footage.
+  prompt: `You are an expert volleyball coach providing an evaluation of player highlight footage.
 
-  Identify the player's strengths and weaknesses based on the footage provided, tailored to a D1 level.
-  Consider the player's preferred schools when providing your assessment.
+  Identify the player's strengths and weaknesses based on the footage provided, tailored to their target level of play.
+  Consider the player's preferred schools when providing your assessment to give context, but do not frame this as a recruiting evaluation. The goal is to provide constructive feedback.
 
   Video Footage: {{media url=videoDataUri}}
   Target Level: {{{targetLevel}}}
   Preferred Schools: {{{preferredSchools}}}
 
-  Provide a detailed assessment, focusing on areas where the player excels and areas that need improvement.
+  Provide a detailed assessment, focusing on areas where the player excels and areas that need improvement to reach their target level.
   Ensure your feedback is actionable and specific.
 
   Strengths:

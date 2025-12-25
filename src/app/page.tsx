@@ -14,10 +14,10 @@ export default function Home() {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-headline">
-                    Connect Your Talent to the Court
+                    Elevate Your Game with Expert Feedback
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    CourtConnect is the ultimate platform for high school volleyball players to showcase their skills and get discovered by college coaches.
+                    CourtConnect is the ultimate platform for high school volleyball players to get feedback on their skills from experienced coaches.
                   </p>
                 </div>
               </div>
@@ -30,7 +30,7 @@ export default function Home() {
                            <ArrowRight className="w-5 h-5 ml-auto text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-transform"/>
                         </CardHeader>
                         <CardContent>
-                           <p className="text-muted-foreground">Create your profile, upload highlights, and receive expert feedback to elevate your game.</p>
+                           <p className="text-muted-foreground">Create your profile, share your highlight link, and receive expert feedback to elevate your game.</p>
                         </CardContent>
                     </Card>
                  </Link>
@@ -42,7 +42,7 @@ export default function Home() {
                            <ArrowRight className="w-5 h-5 ml-auto text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-transform"/>
                         </CardHeader>
                         <CardContent>
-                           <p className="text-muted-foreground">Discover new talent, review player footage, and provide assessments to shape the next generation.</p>
+                           <p className="text-muted-foreground">Review player footage and provide evaluations to help players improve.</p>
                         </CardContent>
                     </Card>
                  </Link>

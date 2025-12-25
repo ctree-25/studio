@@ -22,7 +22,7 @@ export default function PlayerPage() {
                                 <CardHeader>
                                     <CardTitle>Player Profile</CardTitle>
                                     <CardDescription>
-                                        Complete your profile to get noticed. Your information and highlight footage will be analyzed by our AI and reviewed by coaches.
+                                        Complete your profile to get feedback. Your information and highlight footage will be analyzed by our AI and reviewed by coaches.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -35,7 +35,7 @@ export default function PlayerPage() {
                                 <CardHeader>
                                     <CardTitle>Coach Feedback</CardTitle>
                                     <CardDescription>
-                                        Here you can find anonymized feedback from coaches who have reviewed your profile.
+                                        Here you can find anonymized feedback from coaches who have evaluated your profile.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>

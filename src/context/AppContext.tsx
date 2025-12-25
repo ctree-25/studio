@@ -13,7 +13,6 @@ export type PlayerProfile = {
   height: string;
   gradYear: string;
   profilePictureUrl?: string;
-  highlightVideo: File | null;
   highlightVideoUrl?: string;
   videoDataUri?: string;
   targetLevel: 'D1' | 'D2' | 'D3';
@@ -26,7 +25,7 @@ export type PlayerProfile = {
 type AppContextType = {
   players: PlayerProfile[];
   getPlayer: (id: string) => PlayerProfile | undefined;
-  addPlayer: (player: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'highlightVideoUrl' | 'videoDataUri' | 'profilePictureUrl'>) => PlayerProfile;
+  addPlayer: (player: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'videoDataUri'>) => PlayerProfile;
   updatePlayer: (playerId: string, updates: Partial<PlayerProfile>) => void;
 };
 
@@ -41,8 +40,7 @@ const MOCK_PLAYERS: PlayerProfile[] = [
         height: "5'9\"",
         gradYear: '2027',
         profilePictureUrl: playerAvatar?.imageUrl,
-        highlightVideo: null,
-        highlightVideoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4',
+        highlightVideoUrl: 'https://www.youtube.com/watch?v=example',
         targetLevel: 'D3',
         preferredSchools: 'Tufts, MIT, Williams',
         submitted: true,
@@ -80,7 +78,7 @@ A solid all-around player with a strong foundation. Her serves are consistent bu
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [players, setPlayers] = useState<PlayerProfile[]>(MOCK_PLAYERS);
 
-  const addPlayer = (playerData: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'highlightVideoUrl' | 'videoDataUri' | 'profilePictureUrl'>): PlayerProfile => {
+  const addPlayer = (playerData: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'videoDataUri'>): PlayerProfile => {
     const newPlayer: PlayerProfile = {
         ...playerData,
         id: `player-${Date.now()}`,
