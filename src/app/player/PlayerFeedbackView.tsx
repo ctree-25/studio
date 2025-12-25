@@ -7,6 +7,34 @@ import { PlayerSkillChart } from "@/components/PlayerSkillChart";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+
+const extractAverageSkillData = (feedback: string) => {
+    const assessments: { [key: string]: number[] } = {};
+    const feedbackSections = feedback.split('###').filter(s => s.trim() !== '');
+
+    feedbackSections.forEach((section) => {
+        const lines = section.trim().split('\n');
+        lines.forEach(line => {
+            const match = line.match(/- ([\w\s]+): (\d+)\/10/);
+            if (match) {
+                const skillName = match[1].trim();
+                const rating = parseInt(match[2], 10);
+                if (!assessments[skillName]) {
+                    assessments[skillName] = [];
+                }
+                assessments[skillName].push(rating);
+            }
+        });
+    });
+
+    const averageSkills = Object.entries(assessments).map(([skill, ratings]) => {
+        const average = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+        return { skill, average: parseFloat(average.toFixed(1)) };
+    });
+
+    return averageSkills;
+};
 
 export function PlayerFeedbackView() {
     const { players } = useAppContext();
@@ -24,6 +52,7 @@ export function PlayerFeedbackView() {
     }
     
     const coachAssessments = myProfile.coachFeedback?.split('###').filter(s => s.trim() !== '').map(s => s.trim());
+    const averageSkillData = myProfile.coachFeedback ? extractAverageSkillData(myProfile.coachFeedback) : [];
 
     return (
         <Tabs defaultValue="skill-assessment" className="w-full">
@@ -40,9 +69,22 @@ export function PlayerFeedbackView() {
                   </CardHeader>
                   <CardContent>
                     {myProfile.coachFeedback ? (
-                         <Suspense fallback={<Skeleton className="w-full h-[450px]" />}>
-                            <PlayerSkillChart feedback={myProfile.coachFeedback} />
-                         </Suspense>
+                        <>
+                            <Suspense fallback={<Skeleton className="w-full h-[450px]" />}>
+                                <PlayerSkillChart feedback={myProfile.coachFeedback} />
+                            </Suspense>
+                            <Separator className="my-6" />
+                            <div className="space-y-4">
+                                <h4 className="font-semibold text-center">Average Skill Ratings</h4>
+                                {averageSkillData.map(({ skill, average }) => (
+                                    <div key={skill} className="grid grid-cols-3 items-center gap-4">
+                                        <span className="text-sm text-muted-foreground">{skill}</span>
+                                        <Progress value={average * 10} className="h-2 col-span-1"/>
+                                        <span className="text-sm font-bold text-primary">{average.toFixed(1)} / 10</span>
+                                    </div>
+                                ))}
+                            </div>
+                         </>
                     ): (
                         <div className="text-center text-muted-foreground py-8">
                             <p>No skill data available yet.</p>
