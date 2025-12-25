@@ -19,7 +19,7 @@ export default function CoachDashboard() {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold font-headline">Coach Dashboard</h1>
-            <p className="text-muted-foreground">Shape the next generation of volleyball talent. Review player footage and provide the expert evaluations that help dedicated athletes reach their full potential.</p>
+            <p className="text-muted-foreground">Shape the future of volleyball, one player at a time. As a coach on CourtConnect, you have the opportunity to grow the next generation of volleyball stars. Your expert evaluations will provide dedicated athletes with the critical feedback they need to sharpen their skills, reach their potential, and elevate their game.</p>
           </div>
 
           {submittedPlayers.length === 0 ? (
