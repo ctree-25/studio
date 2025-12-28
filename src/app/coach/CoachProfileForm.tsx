@@ -195,7 +195,7 @@ export function CoachProfileForm() {
                     name="profileLink"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Optional Profile Link</FormLabel>
+                        <FormLabel>Profile Link (Optional)</FormLabel>
                         <FormControl>
                             <div className="relative">
                                 <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
