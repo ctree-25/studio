@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 const profileFormSchema = z.object({
   experience: z.string({ required_error: 'Please select your years of experience.' }),
-  affiliation: z.enum(['club', 'hs-varsity', 'college', 'former-player', 'other'], { required_error: 'Affiliation is required.' }),
+  affiliation: z.enum(['club', 'hs-varsity', 'college', 'other'], { required_error: 'Affiliation is required.' }),
   otherAffiliation: z.string().optional(),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   phone: z.string().min(10, { message: 'Please enter a valid phone number.' }),
@@ -146,12 +146,6 @@ export function CoachProfileForm() {
                                 <RadioGroupItem value="college" />
                                 </FormControl>
                                 <FormLabel className="font-normal">College</FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                <RadioGroupItem value="former-player" />
-                                </FormControl>
-                                <FormLabel className="font-normal">Former Player</FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-3 space-y-0">
                                 <FormControl>
