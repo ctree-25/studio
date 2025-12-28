@@ -238,7 +238,7 @@ export function CoachProfileForm() {
                         <SelectItem value="1-5">1-5</SelectItem>
                         <SelectItem value="6-10">6-10</SelectItem>
                         <SelectItem value="11-15">11-15</SelectItem>
-                        <SelectItem value="16+">16+</SelectItem>
+                        <SelectItem value="16-20">16-20</SelectItem>
                         </SelectContent>
                     </Select>
                     <FormMessage />
