@@ -41,7 +41,7 @@ export default function PlayerDemoPage() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <PlayerFeedbackView player={player} />
+                                    <PlayerFeedbackView player={player} isDemo={true} />
                                 </CardContent>
                             </Card>
                         </>

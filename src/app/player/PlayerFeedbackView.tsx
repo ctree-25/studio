@@ -42,7 +42,7 @@ const extractAverageSkillData = (feedback: string) => {
     return averageSkills;
 };
 
-export function PlayerFeedbackView({ player }: { player: PlayerProfile | undefined }) {
+export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerProfile | undefined, isDemo?: boolean }) {
     const { updatePlayer } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
@@ -182,7 +182,7 @@ export function PlayerFeedbackView({ player }: { player: PlayerProfile | undefin
                         {!player.trainingPlan ? (
                              <div className="text-center py-8">
                                 <p className="text-muted-foreground mb-4">Click the button to generate a new training plan based on your latest feedback.</p>
-                                <Button onClick={handleGeneratePlan} disabled={isLoading}>
+                                <Button onClick={handleGeneratePlan} disabled={isLoading || isDemo}>
                                     {isLoading ? <Loader2 className="animate-spin" /> : 'Generate Training Plan'}
                                 </Button>
                             </div>
@@ -214,7 +214,7 @@ export function PlayerFeedbackView({ player }: { player: PlayerProfile | undefin
                                     </ul>
                                 </div>
                                 <Separator />
-                                 <Button onClick={handleGeneratePlan} disabled={isLoading} variant="outline" className="w-full">
+                                 <Button onClick={handleGeneratePlan} disabled={isLoading || isDemo} variant="outline" className="w-full">
                                     {isLoading ? <Loader2 className="animate-spin" /> : 'Regenerate Training Plan'}
                                 </Button>
                             </div>
