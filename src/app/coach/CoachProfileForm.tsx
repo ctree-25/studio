@@ -16,6 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 const profileFormSchema = z.object({
   experience: z.string({ required_error: 'Please select your years of experience.' }),
   affiliation: z.enum(['club', 'hs-varsity', 'college', 'other'], { required_error: 'Affiliation is required.' }),
+  affiliationName: z.string().optional(),
   otherAffiliation: z.string().optional(),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   phone: z.string().min(10, { message: 'Please enter a valid phone number.' }),
@@ -32,6 +33,14 @@ const profileFormSchema = z.object({
 }, {
     message: 'Please specify your affiliation',
     path: ['otherAffiliation'],
+}).refine(data => {
+    if (['club', 'hs-varsity', 'college'].includes(data.affiliation)) {
+        return !!data.affiliationName && data.affiliationName.length > 0;
+    }
+    return true;
+}, {
+    message: 'Please specify your affiliation name',
+    path: ['affiliationName'],
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -53,6 +62,7 @@ export function CoachProfileForm() {
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
         otherAffiliation: '',
+        affiliationName: '',
         profileLink: '',
         placedPlayerLevels: [],
     }
@@ -160,6 +170,22 @@ export function CoachProfileForm() {
                         </FormItem>
                     )}
                 />
+
+                {['club', 'hs-varsity', 'college'].includes(affiliation) && (
+                    <FormField
+                        control={form.control}
+                        name="affiliationName"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Affiliation Name</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., Stanford University" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                )}
 
                 {affiliation === 'other' && (
                     <FormField
