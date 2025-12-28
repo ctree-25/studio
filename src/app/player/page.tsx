@@ -2,9 +2,8 @@
 
 import { AppHeader } from '@/components/AppHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlayerProfileForm } from './PlayerProfileForm';
-import { PlayerFeedbackView } from './PlayerFeedbackView';
+import Link from 'next/link';
 
 export default function PlayerPage() {
     return (
@@ -12,38 +11,17 @@ export default function PlayerPage() {
             <AppHeader />
             <main className="flex-1 p-4 md:p-8">
                 <div className="max-w-4xl mx-auto">
-                    <Tabs defaultValue="profile" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="profile">My Profile</TabsTrigger>
-                            <TabsTrigger value="feedback">My Feedback</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="profile">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Player Profile</CardTitle>
-                                    <CardDescription>
-                                        Complete your profile to get feedback. Your information and highlight footage will be analyzed by our AI and reviewed by coaches.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <PlayerProfileForm />
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        <TabsContent value="feedback">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Coach Feedback</CardTitle>
-                                    <CardDescription>
-                                        Here you can find anonymized feedback from coaches who have evaluated your profile.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <PlayerFeedbackView />
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Create Your Player Profile</CardTitle>
+                            <CardDescription>
+                                Complete your profile to get feedback. Your information and highlight footage will be analyzed by our AI and reviewed by coaches. Already have a profile? Check out the <Link href="/player/demo" className="underline text-primary">demo</Link>.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <PlayerProfileForm />
+                        </CardContent>
+                    </Card>
                 </div>
             </main>
         </div>

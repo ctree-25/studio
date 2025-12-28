@@ -4,6 +4,7 @@ import { ArrowRight, User, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
   return (
@@ -24,30 +25,36 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex flex-col gap-4 min-h-[300px] justify-center">
-                 <Link href="/player" className="group">
-                    <Card className="hover:bg-card/80 transition-colors duration-300 transform hover:-translate-y-1 hover:shadow-2xl">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                           <User className="w-8 h-8 text-primary" />
-                           <CardTitle>Player Portal</CardTitle>
-                           <ArrowRight className="w-5 h-5 ml-auto text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-transform"/>
-                        </CardHeader>
-                        <CardContent>
-                           <p className="text-muted-foreground">Create your profile, share your highlight link, and receive expert feedback to elevate your game.</p>
-                        </CardContent>
-                    </Card>
-                 </Link>
-                 <Link href="/coach" className="group">
-                    <Card className="hover:bg-card/80 transition-colors duration-300 transform hover:-translate-y-1 hover:shadow-2xl">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                           <Shield className="w-8 h-8 text-primary" />
-                           <CardTitle>Coach Portal</CardTitle>
-                           <ArrowRight className="w-5 h-5 ml-auto text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-transform"/>
-                        </CardHeader>
-                        <CardContent>
-                           <p className="text-muted-foreground">Your expert evaluation can unlock a player's potential. Join to guide the next generation of talent.</p>
-                        </CardContent>
-                    </Card>
-                 </Link>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center gap-4">
+                       <User className="w-8 h-8 text-primary" />
+                       <CardTitle>Player Portal</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                       <p className="text-muted-foreground mb-4">Create your profile, share your highlights, and receive expert feedback to elevate your game.</p>
+                       <div className="flex gap-4">
+                        <Link href="/player/demo" className="flex-1">
+                          <Button className="w-full">Demo</Button>
+                        </Link>
+                        <Button variant="secondary" className="flex-1" onClick={() => {}}>Login</Button>
+                       </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center gap-4">
+                       <Shield className="w-8 h-8 text-primary" />
+                       <CardTitle>Coach Portal</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                       <p className="text-muted-foreground mb-4">Use your expertise to unlock a player's full potential. Guide the next generation of talent.</p>
+                       <div className="flex gap-4">
+                          <Link href="/coach/demo" className='flex-1'>
+                            <Button className="w-full">Demo</Button>
+                          </Link>
+                          <Button variant="secondary" className="flex-1" onClick={() => {}}>Login</Button>
+                       </div>
+                    </CardContent>
+                </Card>
               </div>
             </div>
           </div>

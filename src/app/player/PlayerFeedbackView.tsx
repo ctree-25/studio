@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { PlayerProfile } from "@/context/AppContext";
 
 const extractAverageSkillData = (feedback: string) => {
     const assessments: { [key: string]: number[] } = {};
@@ -36,23 +37,17 @@ const extractAverageSkillData = (feedback: string) => {
     return averageSkills;
 };
 
-export function PlayerFeedbackView() {
-    const { players } = useAppContext();
-    
-    // In a real app, we'd get the current logged-in player.
-    // Here we default to showing Jamie Tree's profile.
-    const myProfile = players.find(p => p.id === 'mock-player-2');
-
-    if (!myProfile) {
+export function PlayerFeedbackView({ player }: { player: PlayerProfile | undefined }) {
+    if (!player) {
         return (
             <div className="text-center text-muted-foreground py-8">
-                <p>Create your profile to receive feedback from coaches.</p>
+                <p>Player profile not found. Create your profile to receive feedback from coaches.</p>
             </div>
         );
     }
     
-    const coachAssessments = myProfile.coachFeedback?.split('###').filter(s => s.trim() !== '').map(s => s.trim());
-    const averageSkillData = myProfile.coachFeedback ? extractAverageSkillData(myProfile.coachFeedback) : [];
+    const coachAssessments = player.coachFeedback?.split('###').filter(s => s.trim() !== '').map(s => s.trim());
+    const averageSkillData = player.coachFeedback ? extractAverageSkillData(player.coachFeedback) : [];
 
     return (
         <Tabs defaultValue="skill-assessment" className="w-full">
@@ -68,10 +63,10 @@ export function PlayerFeedbackView() {
                     <CardDescription>Aggregated from coach feedback.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {myProfile.coachFeedback ? (
+                    {player.coachFeedback ? (
                         <>
                             <Suspense fallback={<Skeleton className="w-full h-[450px]" />}>
-                                <PlayerSkillChart feedback={myProfile.coachFeedback} />
+                                <PlayerSkillChart feedback={player.coachFeedback} />
                             </Suspense>
                             <Separator className="my-6" />
                             <div className="space-y-4">
@@ -130,7 +125,7 @@ export function PlayerFeedbackView() {
                 )}
             </TabsContent>
             <TabsContent value="ai-analysis">
-                {myProfile.aiAnalysis ? (
+                {player.aiAnalysis ? (
                     <Card>
                         <CardHeader>
                             <CardTitle>Your AI-Powered Analysis</CardTitle>
@@ -139,17 +134,17 @@ export function PlayerFeedbackView() {
                         <CardContent className="space-y-4">
                             <div>
                                 <h4 className="font-semibold text-primary">Strengths</h4>
-                                <p className="text-muted-foreground">{myProfile.aiAnalysis.strengths}</p>
+                                <p className="text-muted-foreground">{player.aiAnalysis.strengths}</p>
                             </div>
                             <Separator />
                             <div>
                                 <h4 className="font-semibold text-primary">Areas for Improvement</h4>
-                                <p className="text-muted-foreground">{myProfile.aiAnalysis.weaknesses}</p>
+                                <p className="text-muted-foreground">{player.aiAnalysis.weaknesses}</p>
                             </div>
                             <Separator />
                             <div>
                                 <h4 className="font-semibold text-primary">Overall Assessment</h4>
-                                <p className="text-muted-foreground">{myProfile.aiAnalysis.overallAssessment}</p>
+                                <p className="text-muted-foreground">{player.aiAnalysis.overallAssessment}</p>
                             </div>
                         </CardContent>
                     </Card>
