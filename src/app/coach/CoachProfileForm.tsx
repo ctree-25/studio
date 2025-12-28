@@ -23,6 +23,7 @@ const profileFormSchema = z.object({
     message: 'You have to select at least one level.',
   }),
   profileLink: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
+  profilesPerWeek: z.string({ required_error: 'Please select your preference.' }),
 }).refine(data => {
     if (data.affiliation === 'other') {
         return !!data.otherAffiliation && data.otherAffiliation.length > 0;
@@ -221,7 +222,29 @@ export function CoachProfileForm() {
                     />
               </div>
            </div>
-            
+            <FormField
+                control={form.control}
+                name="profilesPerWeek"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>How many profiles would you like to review per week?</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a range" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        <SelectItem value="1-5">1-5</SelectItem>
+                        <SelectItem value="6-10">6-10</SelectItem>
+                        <SelectItem value="11-15">11-15</SelectItem>
+                        <SelectItem value="16+">16+</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
             <FormField
               control={form.control}
               name="placedPlayerLevels"
