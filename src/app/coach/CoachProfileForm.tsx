@@ -11,13 +11,17 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Link as LinkIcon } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const profileFormSchema = z.object({
   experience: z.string({ required_error: 'Please select your years of experience.' }),
   affiliation: z.enum(['club', 'hs-varsity', 'college', 'former-player', 'other'], { required_error: 'Affiliation is required.' }),
   otherAffiliation: z.string().optional(),
-  contact: z.string().min(1, { message: 'Email or phone number is required.'}),
-  experienceLevel: z.string({ required_error: 'Please specify your experience level.' }),
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  phone: z.string().min(10, { message: 'Please enter a valid phone number.' }),
+  placedPlayerLevels: z.array(z.string()).refine(value => value.some(item => item), {
+    message: 'You have to select at least one level.',
+  }),
   profileLink: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
 }).refine(data => {
     if (data.affiliation === 'other') {
@@ -31,6 +35,15 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
+const placedPlayerLevelOptions = [
+    { id: 'd1', label: 'NCAA Division I' },
+    { id: 'd2', label: 'NCAA Division II' },
+    { id: 'd3', label: 'NCAA Division III' },
+    { id: 'naia', label: 'NAIA' },
+    { id: 'pro', label: 'Professional' },
+    { id: 'none', label: 'None' },
+];
+
 export function CoachProfileForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -40,6 +53,7 @@ export function CoachProfileForm() {
     defaultValues: {
         otherAffiliation: '',
         profileLink: '',
+        placedPlayerLevels: [],
     }
   });
 
@@ -102,19 +116,34 @@ export function CoachProfileForm() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="contact"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email or Phone Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="coach@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-8">
+                 <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                        <Input placeholder="coach@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                        <Input placeholder="(123) 456-7890" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              </div>
            </div>
 
             <FormField
@@ -183,29 +212,52 @@ export function CoachProfileForm() {
             )}
             
             <FormField
-                control={form.control}
-                name="experienceLevel"
-                render={({ field }) => (
-                  <FormItem className="mt-8">
-                    <FormLabel>What level of play are you most experienced with (playing or coaching)?</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a level" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        <SelectItem value="D1">NCAA Division I</SelectItem>
-                        <SelectItem value="D2">NCAA Division II</SelectItem>
-                        <SelectItem value="D3">NCAA Division III</SelectItem>
-                        <SelectItem value="high-school">High School / Club</SelectItem>
-                        <SelectItem value="pro">Professional</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              control={form.control}
+              name="placedPlayerLevels"
+              render={() => (
+                <FormItem className="mt-8">
+                  <div className="mb-4">
+                    <FormLabel>Have you had former players compete at the following levels?</FormLabel>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                  {placedPlayerLevelOptions.map((item) => (
+                    <FormField
+                      key={item.id}
+                      control={form.control}
+                      name="placedPlayerLevels"
+                      render={({ field }) => {
+                        return (
+                          <FormItem
+                            key={item.id}
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(item.id)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...field.value, item.id])
+                                    : field.onChange(
+                                        field.value?.filter(
+                                          (value) => value !== item.id
+                                        )
+                                      )
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {item.label}
+                            </FormLabel>
+                          </FormItem>
+                        )
+                      }}
+                    />
+                  ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
              <FormField
               control={form.control}
