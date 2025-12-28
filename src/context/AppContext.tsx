@@ -1,6 +1,7 @@
 'use client';
 
 import type { AnalyzePlayerFootageOutput } from '@/ai/flows/analyze-player-footage';
+import { type GenerateTrainingPlanOutput } from '@/ai/flows/generate-training-plan';
 import { type ReactNode, createContext, useContext, useState } from 'react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -19,13 +20,14 @@ export type PlayerProfile = {
   preferredSchools: string;
   aiAnalysis?: AnalyzePlayerFootageOutput;
   coachFeedback?: string;
+  trainingPlan?: GenerateTrainingPlanOutput;
   submitted: boolean;
 };
 
 type AppContextType = {
   players: PlayerProfile[];
   getPlayer: (id: string) => PlayerProfile | undefined;
-  addPlayer: (player: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'videoDataUri'>) => PlayerProfile;
+  addPlayer: (player: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'videoDataUri' | 'trainingPlan'>) => PlayerProfile;
   updatePlayer: (playerId: string, updates: Partial<PlayerProfile>) => void;
 };
 
@@ -71,14 +73,44 @@ A solid all-around player with a strong foundation. Her serves are consistent bu
 - Footwork: 8/10
 - Decision Making: 7/10
 - Defense: 6/10
-- Serving: 7/10`
+- Serving: 7/10`,
+        trainingPlan: {
+          actionableSteps: [
+            {
+              title: "Improve Footwork Consistency",
+              description: "Focus on drills that simulate out-of-system plays. Practice moving to the ball from different court positions to ensure you are balanced and stable before setting."
+            },
+            {
+              title: "Develop an Aggressive Serve",
+              description: "Work on a consistent, powerful float serve or a topspin jump serve. Aim for specific zones on the court to put the opposing team's passers under pressure."
+            },
+            {
+              title: "Increase Set Tempo",
+              description: "Practice quick-tempo sets to the pins to speed up your offense. Use a metronome or have a coach give you a rhythm to follow during drills."
+            }
+          ],
+          suggestedVideos: [
+            {
+              title: "Setter Footwork Patterns - The Art of Coaching Volleyball",
+              url: "https://www.youtube.com/watch?v=example1"
+            },
+            {
+              title: "How to Jump Float Serve - Elevate Yourself",
+              url: "https://www.youtube.com/watch?v=example2"
+            },
+            {
+              title: "Increasing Set Tempo with Quicker Armwork - Breakthrough VB",
+              url: "https://www.youtube.com/watch?v=example3"
+            }
+          ]
+        }
     }
 ];
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [players, setPlayers] = useState<PlayerProfile[]>(MOCK_PLAYERS);
 
-  const addPlayer = (playerData: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'videoDataUri'>): PlayerProfile => {
+  const addPlayer = (playerData: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'videoDataUri' | 'trainingPlan'>): PlayerProfile => {
     const newPlayer: PlayerProfile = {
         ...playerData,
         id: `player-${Date.now()}`,
