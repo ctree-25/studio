@@ -15,9 +15,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 const profileFormSchema = z.object({
   experience: z.string({ required_error: 'Please select your years of experience.' }),
-  affiliation: z.enum(['club', 'hs-varsity', 'college', 'other'], { required_error: 'Affiliation is required.' }),
-  affiliationName: z.string().optional(),
-  otherAffiliation: z.string().optional(),
+  levelOfCoaching: z.enum(['club', 'hs-varsity', 'college'], { required_error: 'Level of coaching is required.' }),
+  affiliation: z.string().min(1, 'Affiliation is required.'),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   phone: z.string().min(10, { message: 'Please enter a valid phone number.' }),
   placedPlayerLevels: z.array(z.string()).refine(value => value.some(item => item), {
@@ -25,22 +24,6 @@ const profileFormSchema = z.object({
   }),
   profileLink: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
   profilesPerWeek: z.string({ required_error: 'Please select your preference.' }),
-}).refine(data => {
-    if (data.affiliation === 'other') {
-        return !!data.otherAffiliation && data.otherAffiliation.length > 0;
-    }
-    return true;
-}, {
-    message: 'Please specify your affiliation',
-    path: ['otherAffiliation'],
-}).refine(data => {
-    if (['club', 'hs-varsity', 'college'].includes(data.affiliation)) {
-        return !!data.affiliationName && data.affiliationName.length > 0;
-    }
-    return true;
-}, {
-    message: 'Please specify your affiliation name',
-    path: ['affiliationName'],
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -61,8 +44,7 @@ export function CoachProfileForm() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-        otherAffiliation: '',
-        affiliationName: '',
+        affiliation: '',
         profileLink: '',
         placedPlayerLevels: [],
     }
@@ -97,7 +79,7 @@ export function CoachProfileForm() {
     }
   }
   
-  const affiliation = form.watch('affiliation');
+  const levelOfCoaching = form.watch('levelOfCoaching');
 
   return (
     <Form {...form}>
@@ -130,10 +112,10 @@ export function CoachProfileForm() {
                 />
                  <FormField
                     control={form.control}
-                    name="affiliation"
+                    name="levelOfCoaching"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Primary Affiliation</FormLabel>
+                        <FormLabel>Level of Coaching</FormLabel>
                         <FormControl>
                             <RadioGroup
                             onValueChange={field.onChange}
@@ -158,12 +140,6 @@ export function CoachProfileForm() {
                                 </FormControl>
                                 <FormLabel className="font-normal">College</FormLabel>
                             </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                <RadioGroupItem value="other" />
-                                </FormControl>
-                                <FormLabel className="font-normal">Other</FormLabel>
-                            </FormItem>
                             </RadioGroup>
                         </FormControl>
                         <FormMessage />
@@ -171,31 +147,15 @@ export function CoachProfileForm() {
                     )}
                 />
 
-                {['club', 'hs-varsity', 'college'].includes(affiliation) && (
+                {levelOfCoaching && (
                     <FormField
                         control={form.control}
-                        name="affiliationName"
+                        name="affiliation"
                         render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Affiliation Name</FormLabel>
+                            <FormLabel>Affiliation</FormLabel>
                             <FormControl>
                             <Input placeholder="e.g., Stanford University" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                )}
-
-                {affiliation === 'other' && (
-                    <FormField
-                        control={form.control}
-                        name="otherAffiliation"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Please specify your affiliation</FormLabel>
-                            <FormControl>
-                            <Input placeholder="e.g., Pro Team, Skills Clinic" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
