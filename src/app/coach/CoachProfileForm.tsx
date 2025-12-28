@@ -93,29 +93,95 @@ export function CoachProfileForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <fieldset>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <FormField
-                control={form.control}
-                name="experience"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Coaching Experience</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+             <div className="space-y-8">
+                <FormField
+                    control={form.control}
+                    name="experience"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Coaching Experience</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select years of experience" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            <SelectItem value="0-2">0-2 years</SelectItem>
+                            <SelectItem value="3-5">3-5 years</SelectItem>
+                            <SelectItem value="6-10">6-10 years</SelectItem>
+                            <SelectItem value="10+">10+ years</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="affiliation"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Primary Affiliation</FormLabel>
                         <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select years of experience" />
-                        </SelectTrigger>
+                            <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-col space-y-1"
+                            >
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="club" />
+                                </FormControl>
+                                <FormLabel className="font-normal">Club</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="hs-varsity" />
+                                </FormControl>
+                                <FormLabel className="font-normal">HS Varsity</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="college" />
+                                </FormControl>
+                                <FormLabel className="font-normal">College</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="former-player" />
+                                </FormControl>
+                                <FormLabel className="font-normal">Former Player</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="other" />
+                                </FormControl>
+                                <FormLabel className="font-normal">Other</FormLabel>
+                            </FormItem>
+                            </RadioGroup>
                         </FormControl>
-                        <SelectContent>
-                        <SelectItem value="0-2">0-2 years</SelectItem>
-                        <SelectItem value="3-5">3-5 years</SelectItem>
-                        <SelectItem value="6-10">6-10 years</SelectItem>
-                        <SelectItem value="10+">10+ years</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                {affiliation === 'other' && (
+                    <FormField
+                        control={form.control}
+                        name="otherAffiliation"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Please specify your affiliation</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., Pro Team, Skills Clinic" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
                 )}
-              />
+             </div>
               <div className="space-y-8">
                  <FormField
                     control={form.control}
@@ -143,79 +209,30 @@ export function CoachProfileForm() {
                     </FormItem>
                     )}
                 />
-              </div>
-           </div>
-
-            <FormField
-                control={form.control}
-                name="affiliation"
-                render={({ field }) => (
-                    <FormItem className="mt-8">
-                    <FormLabel>Primary Affiliation</FormLabel>
-                    <FormControl>
-                        <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                        >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                            <RadioGroupItem value="club" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Club</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                            <RadioGroupItem value="hs-varsity" />
-                            </FormControl>
-                            <FormLabel className="font-normal">HS Varsity</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                            <RadioGroupItem value="college" />
-                            </FormControl>
-                            <FormLabel className="font-normal">College</FormLabel>
-                        </FormItem>
-                         <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                            <RadioGroupItem value="former-player" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Former Player</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                            <RadioGroupItem value="other" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Other</FormLabel>
-                        </FormItem>
-                        </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-             />
-
-            {affiliation === 'other' && (
-                <FormField
+                 <FormField
                     control={form.control}
-                    name="otherAffiliation"
+                    name="profileLink"
                     render={({ field }) => (
-                    <FormItem className="mt-4">
-                        <FormLabel>Please specify your affiliation</FormLabel>
+                        <FormItem>
+                        <FormLabel>Optional Profile Link</FormLabel>
                         <FormControl>
-                        <Input placeholder="e.g., Pro Team, Skills Clinic" {...field} />
+                            <div className="relative">
+                                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input placeholder="https://linkedin.com/in/..." {...field} className="pl-10" />
+                            </div>
                         </FormControl>
                         <FormMessage />
-                    </FormItem>
+                        </FormItem>
                     )}
-                />
-            )}
+                    />
+              </div>
+           </div>
             
             <FormField
               control={form.control}
               name="placedPlayerLevels"
               render={() => (
-                <FormItem className="mt-8">
+                <FormItem>
                   <div className="mb-4">
                     <FormLabel>Have you had former players compete at the following levels?</FormLabel>
                   </div>
@@ -254,23 +271,6 @@ export function CoachProfileForm() {
                     />
                   ))}
                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-             <FormField
-              control={form.control}
-              name="profileLink"
-              render={({ field }) => (
-                <FormItem className="mt-8">
-                  <FormLabel>Optional Profile Link</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="https://linkedin.com/in/..." {...field} className="pl-10" />
-                    </div>
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
