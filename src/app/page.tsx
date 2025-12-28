@@ -34,9 +34,9 @@ export default function Home() {
                        <p className="text-muted-foreground mb-4">Create your profile, share your highlights, and receive expert feedback to elevate your game.</p>
                        <div className="flex gap-4">
                         <Link href="/player/demo" className="flex-1">
-                          <Button className="w-full">Demo</Button>
+                          <Button variant="secondary" className="w-full">Demo</Button>
                         </Link>
-                        <Button variant="secondary" className="flex-1" onClick={() => {}}>Login</Button>
+                        <Button className="flex-1" onClick={() => {}}>Login</Button>
                        </div>
                     </CardContent>
                 </Card>
@@ -49,9 +49,9 @@ export default function Home() {
                        <p className="text-muted-foreground mb-4">Use your expertise to unlock a player's full potential. Guide the next generation of talent.</p>
                        <div className="flex gap-4">
                           <Link href="/coach/demo" className='flex-1'>
-                            <Button className="w-full">Demo</Button>
+                            <Button variant="secondary" className="w-full">Demo</Button>
                           </Link>
-                          <Button variant="secondary" className="flex-1" onClick={() => {}}>Login</Button>
+                          <Button className="flex-1" onClick={() => {}}>Login</Button>
                        </div>
                     </CardContent>
                 </Card>
