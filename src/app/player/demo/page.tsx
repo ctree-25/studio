@@ -4,9 +4,9 @@ import { AppHeader } from '@/components/AppHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlayerFeedbackView } from '../PlayerFeedbackView';
 import { useAppContext } from '@/context/AppContext';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
+import { PlayerProfileForm } from '../PlayerProfileForm';
 import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
 
 export default function PlayerDemoPage() {
     const { getPlayer } = useAppContext();
@@ -19,29 +19,25 @@ export default function PlayerDemoPage() {
                 <div className="max-w-4xl mx-auto space-y-8">
                     {player ? (
                         <>
-                            <Card>
-                                <CardHeader className='flex-row items-center gap-4'>
-                                    <Avatar className="h-20 w-20">
-                                        <AvatarImage src={player.profilePictureUrl} data-ai-hint="volleyball player"/>
-                                        <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <CardTitle className="text-2xl font-headline">{player.name}</CardTitle>
-                                        <CardDescription>{player.position}</CardDescription>
-                                    </div>
+                           <Card>
+                                <CardHeader>
+                                    <CardTitle>Example Player Profile</CardTitle>
+                                    <CardDescription>
+                                        This is a demonstration of how a player profile looks when filled out. Use this as a guide for your own submission.
+                                    </CardDescription>
                                 </CardHeader>
-                                <CardContent className="grid grid-cols-2 gap-4">
-                                    <div className="flex items-center"><Ruler className="w-4 h-4 mr-2 text-muted-foreground"/> Height: {player.height}</div>
-                                    <div className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-muted-foreground"/> Grad Year: {player.gradYear}</div>
-                                    <div className="flex items-center"><BarChart2 className="w-4 h-4 mr-2 text-muted-foreground"/> Target Level: {player.targetLevel}</div>
-                                    <div className="flex items-center"><MapPin className="w-4 h-4 mr-2 text-muted-foreground"/> Target Schools: {player.preferredSchools}</div>
+                                <CardContent>
+                                    <PlayerProfileForm player={player} isDemo={true} />
                                 </CardContent>
-                             </Card>
+                            </Card>
+
+                            <Separator />
+                            
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Coach Feedback</CardTitle>
+                                    <CardTitle>Example Feedback & Analysis</CardTitle>
                                     <CardDescription>
-                                        Here you can find anonymized feedback from coaches who have evaluated your profile.
+                                        Once you submit your profile, this is how coach feedback and AI analysis will be displayed.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>

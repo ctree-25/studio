@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useAppContext } from '@/context/AppContext';
+import { useAppContext, PlayerProfile } from '@/context/AppContext';
 import { analyzePlayerFootage } from '@/ai/flows/analyze-player-footage';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +23,7 @@ const profileFormSchema = z.object({
   position: z.string().min(2, { message: 'Position is required.' }),
   height: z.string().min(2, { message: 'Height is required.' }),
   gradYear: z.string().min(4, { message: 'Valid graduation year is required.' }),
-  profilePicture: z.any().refine(file => file instanceof File, 'Profile picture is required.'),
+  profilePicture: z.any().optional(),
   targetLevel: z.enum(['D1', 'D2', 'D3'], { required_error: 'Target level is required.' }),
   preferredSchools: z.string().min(3, { message: 'Please list at least one school.' }),
   highlightVideoUrl: z.string().url({ message: 'Please enter a valid video URL.' }),
@@ -31,21 +31,27 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
-export function PlayerProfileForm() {
+interface PlayerProfileFormProps {
+  player?: PlayerProfile;
+  isDemo?: boolean;
+}
+
+export function PlayerProfileForm({ player, isDemo = false }: PlayerProfileFormProps) {
   const { addPlayer, updatePlayer } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(playerAvatar?.imageUrl || '');
+  const [avatarPreview, setAvatarPreview] = useState(player?.profilePictureUrl || playerAvatar?.imageUrl || '');
   const { toast } = useToast();
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      name: '',
-      position: '',
-      height: '',
-      gradYear: '',
-      preferredSchools: '',
-      highlightVideoUrl: '',
+      name: player?.name || '',
+      position: player?.position || '',
+      height: player?.height || '',
+      gradYear: player?.gradYear || '',
+      targetLevel: player?.targetLevel,
+      preferredSchools: player?.preferredSchools || '',
+      highlightVideoUrl: player?.highlightVideoUrl || '',
     },
   });
 
@@ -58,6 +64,8 @@ export function PlayerProfileForm() {
     });
 
   async function onSubmit(data: ProfileFormValues) {
+    if (isDemo) return;
+
     setIsLoading(true);
     toast({
       title: 'Processing Profile...',
@@ -65,15 +73,15 @@ export function PlayerProfileForm() {
     });
 
     try {
-      // Since there is no video to upload and get a data URI from,
-      // we'll use a placeholder for the AI analysis call. In a real app,
-      // you might fetch the video from the URL server-side.
       const placeholderVideoDataUri = 'data:video/mp4;base64,';
 
       const { profilePicture, ...playerData } = data;
       const newPlayer = addPlayer(playerData);
       
-      const pictureObjectUrl = URL.createObjectURL(profilePicture);
+      let pictureObjectUrl = playerAvatar?.imageUrl || '';
+      if(profilePicture instanceof File) {
+        pictureObjectUrl = URL.createObjectURL(profilePicture);
+      }
 
       updatePlayer(newPlayer.id, { 
         profilePictureUrl: pictureObjectUrl,
@@ -112,156 +120,160 @@ export function PlayerProfileForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="profilePicture"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Profile Picture</FormLabel>
-              <div className="flex items-center gap-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={avatarPreview} data-ai-hint="volleyball player" />
-                  <AvatarFallback>PFP</AvatarFallback>
-                </Avatar>
-                <FormControl>
-                    <div className="relative">
-                        <Input 
-                            type="file" 
-                            accept="image/*" 
-                            className="hidden"
-                            id="pfp-upload"
-                            onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if(file) {
-                                    field.onChange(file);
-                                    setAvatarPreview(URL.createObjectURL(file));
-                                }
-                            }}
-                        />
-                        <label htmlFor="pfp-upload" className="flex items-center justify-center px-3 py-2 text-sm border-2 border-dashed rounded-md cursor-pointer border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-                            <Upload className="w-4 h-4 mr-2"/>
-                            <span>Click to upload a picture</span>
-                        </label>
-                    </div>
-                </FormControl>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+        <fieldset disabled={isDemo}>
+          <FormField
+            control={form.control}
+            name="profilePicture"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Profile Picture</FormLabel>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={avatarPreview} data-ai-hint="volleyball player" />
+                    <AvatarFallback>PFP</AvatarFallback>
+                  </Avatar>
                   <FormControl>
-                    <Input placeholder="Jane Doe" {...field} />
+                      <div className="relative">
+                          <Input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden"
+                              id="pfp-upload"
+                              onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if(file) {
+                                      field.onChange(file);
+                                      setAvatarPreview(URL.createObjectURL(file));
+                                  }
+                              }}
+                          />
+                          <label htmlFor="pfp-upload" className="flex items-center justify-center px-3 py-2 text-sm border-2 border-dashed rounded-md cursor-pointer border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                              <Upload className="w-4 h-4 mr-2"/>
+                              <span>Click to upload a picture</span>
+                          </label>
+                      </div>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="position"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Position</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Outside Hitter" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="height"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Height</FormLabel>
-                  <FormControl>
-                    <Input placeholder="5'11&quot;" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="gradYear"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Graduation Year</FormLabel>
-                  <FormControl>
-                    <Input placeholder="2025" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-        </div>
-        <FormField
-          control={form.control}
-          name="targetLevel"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Target Level of Play</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your target level" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="D1">NCAA Division I</SelectItem>
-                  <SelectItem value="D2">NCAA Division II</SelectItem>
-                  <SelectItem value="D3">NCAA Division III</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="preferredSchools"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Target Schools</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="List schools you're interested in, separated by commas..."
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="highlightVideoUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Highlight Video Link</FormLabel>
-              <FormControl>
-                <div className="relative">
-                    <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="https://youtube.com/watch?v=..." {...field} className="pl-10" />
                 </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isLoading ? 'Analyzing...' : 'Submit Profile'}
-        </Button>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Jane Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="position"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Position</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Outside Hitter" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="height"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Height</FormLabel>
+                    <FormControl>
+                      <Input placeholder="5'11&quot;" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="gradYear"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Graduation Year</FormLabel>
+                    <FormControl>
+                      <Input placeholder="2025" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+          </div>
+          <div className="space-y-8 mt-8">
+            <FormField
+              control={form.control}
+              name="targetLevel"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Level of Play</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your target level" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="D1">NCAA Division I</SelectItem>
+                      <SelectItem value="D2">NCAA Division II</SelectItem>
+                      <SelectItem value="D3">NCAA Division III</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="preferredSchools"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Schools</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="List schools you're interested in, separated by commas..."
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="highlightVideoUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Highlight Video Link</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="https://youtube.com/watch?v=..." {...field} className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <Button type="submit" disabled={isLoading || isDemo} className="w-full md:w-auto mt-8">
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isDemo ? 'This is a Demo' : (isLoading ? 'Analyzing...' : 'Submit Profile')}
+          </Button>
+        </fieldset>
       </form>
     </Form>
   );
