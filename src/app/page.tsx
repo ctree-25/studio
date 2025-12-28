@@ -37,7 +37,7 @@ export default function Home() {
                           <Button variant="secondary" className="w-full">Demo</Button>
                         </Link>
                         <Link href="/player" className='flex-1'>
-                            <Button className="w-full">Login</Button>
+                            <Button className="w-full">Register</Button>
                         </Link>
                        </div>
                     </CardContent>
@@ -54,7 +54,7 @@ export default function Home() {
                             <Button variant="secondary" className="w-full">Demo</Button>
                           </Link>
                           <Link href="/coach" className="flex-1">
-                            <Button className="w-full">Login</Button>
+                            <Button className="w-full">Register</Button>
                           </Link>
                        </div>
                     </CardContent>
