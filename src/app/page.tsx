@@ -1,3 +1,5 @@
+'use client';
+
 import { ArrowRight, User, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,7 +44,7 @@ export default function Home() {
                            <ArrowRight className="w-5 h-5 ml-auto text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-transform"/>
                         </CardHeader>
                         <CardContent>
-                           <p className="text-muted-foreground">Help shape the next generation of volleyball stars by providing the expert feedback they need to succeed.</p>
+                           <p className="text-muted-foreground">Your expert evaluation can unlock a player's potential. Join to guide the next generation of talent.</p>
                         </CardContent>
                     </Card>
                  </Link>
