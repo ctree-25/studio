@@ -234,7 +234,7 @@ export function CoachProfileForm() {
               render={() => (
                 <FormItem>
                   <div className="mb-4">
-                    <FormLabel>Have you had former players compete at the following levels?</FormLabel>
+                    <FormLabel>Have you worked with former players that compete at the following levels?</FormLabel>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                   {placedPlayerLevelOptions.map((item) => (
