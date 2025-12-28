@@ -36,7 +36,9 @@ export default function Home() {
                         <Link href="/player/demo" className="flex-1">
                           <Button variant="secondary" className="w-full">Demo</Button>
                         </Link>
-                        <Button className="flex-1" onClick={() => {}}>Login</Button>
+                        <Link href="/player" className='flex-1'>
+                            <Button className="w-full">Login</Button>
+                        </Link>
                        </div>
                     </CardContent>
                 </Card>

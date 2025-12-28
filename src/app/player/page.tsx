@@ -15,7 +15,7 @@ export default function PlayerPage() {
                         <CardHeader>
                             <CardTitle>Create Your Player Profile</CardTitle>
                             <CardDescription>
-                                Complete your profile to get feedback. Your information and highlight footage will be analyzed by our AI and reviewed by coaches. Already have a profile? Check out the <Link href="/player/demo" className="underline text-primary">demo</Link>.
+                                Complete your profile to get feedback. Your information and highlight footage will be analyzed by our AI and reviewed by coaches. To see an example, check out the <Link href="/player/demo" className="underline text-primary">demo</Link>.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
