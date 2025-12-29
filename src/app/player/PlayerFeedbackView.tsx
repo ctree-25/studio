@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAppContext } from "@/context/AppContext";
@@ -159,10 +160,9 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                 <TabsTrigger value="training-plan" className="whitespace-normal h-auto">Training Plan</TabsTrigger>
             </TabsList>
             <TabsContent value="skill-assessment">
-                <Card>
-                  <CardContent className="pt-6">
+                <div className="space-y-8">
                     {player.coachFeedback ? (
-                        <div className="space-y-8">
+                        <>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
                                 <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
                                     <PlayerOverallScore score={overallScore} targetLevel={player.targetLevel} />
@@ -182,18 +182,24 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                     </CardContent>
                                 </Card>
                             </div>
-                            <Separator />
-                            <Suspense fallback={<Skeleton className="w-full h-[450px]" />}>
-                                <PlayerSkillChart feedback={player.coachFeedback} />
-                            </Suspense>
-                         </div>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Coach Skill Comparison</CardTitle>
+                                    <CardDescription>See how each coach rated your skills.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Suspense fallback={<Skeleton className="w-full h-[450px]" />}>
+                                        <PlayerSkillChart feedback={player.coachFeedback} />
+                                    </Suspense>
+                                </CardContent>
+                            </Card>
+                         </>
                     ): (
                         <div className="text-center text-muted-foreground py-8">
                             <p>No skill data available yet.</p>
                         </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
             </TabsContent>
             <TabsContent value="coach-feedback">
                 {coachAssessments && coachAssessments.length > 0 ? (
