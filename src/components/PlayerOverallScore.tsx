@@ -32,10 +32,12 @@ export function PlayerOverallScore({ score, targetLevel }: { score: number, targ
   return (
     <Card className="flex flex-col items-center justify-center h-full relative">
         <CardHeader className="items-center pb-2">
-            <CardTitle>Overall Readiness</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+                Overall Readiness: <span className={`text-base font-semibold ${readiness.color}`}>{readiness.label}</span>
+            </CardTitle>
             <CardDescription>Targeting {targetLevel}</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col items-center justify-center p-0 w-full">
+        <CardContent className="flex-1 flex flex-col items-center justify-center p-0 w-full relative">
             <ChartContainer
                 config={{}}
                 className="mx-auto aspect-square w-full max-w-[250px]"
@@ -65,11 +67,10 @@ export function PlayerOverallScore({ score, targetLevel }: { score: number, targ
                     />
                 </RadialBarChart>
             </ChartContainer>
-            
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <p className="text-4xl font-bold text-primary">{score.toFixed(1)}</p>
+            </div>
         </CardContent>
-        <div className="p-4 text-center">
-            <p className={`text-lg font-semibold ${readiness.color}`}>{readiness.label}</p>
-        </div>
     </Card>
   );
 }
