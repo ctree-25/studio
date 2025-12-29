@@ -155,20 +155,24 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                   <CardContent>
                     {player.coachFeedback ? (
                         <div className="space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                                <Suspense fallback={<Skeleton className="w-full h-[250px]" />}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+                                <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
                                     <PlayerOverallScore score={overallScore} targetLevel={player.targetLevel} />
                                 </Suspense>
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold text-2xl tracking-tight text-center md:text-left">Average Skill Ratings</h3>
-                                    {averageSkillData.map(({ skill, average }) => (
-                                        <div key={skill} className="grid grid-cols-[1fr_2fr_auto] items-center gap-2 md:gap-4">
-                                            <span className="text-sm text-muted-foreground truncate">{skill}</span>
-                                            <Progress value={average * 10} className="h-2"/>
-                                            <span className="text-sm font-bold text-primary">{average.toFixed(1)}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                                <Card className="flex flex-col">
+                                    <CardHeader>
+                                         <CardTitle className="text-2xl tracking-tight">Average Skill Ratings</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex flex-col justify-center flex-grow space-y-4">
+                                        {averageSkillData.map(({ skill, average }) => (
+                                            <div key={skill} className="grid grid-cols-[1fr_2fr_auto] items-center gap-2 md:gap-4">
+                                                <span className="text-sm text-muted-foreground truncate">{skill}</span>
+                                                <Progress value={average * 10} className="h-2"/>
+                                                <span className="text-sm font-bold text-primary">{average.toFixed(1)}</span>
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
                             </div>
                             <Separator />
                             <Suspense fallback={<Skeleton className="w-full h-[450px]" />}>
