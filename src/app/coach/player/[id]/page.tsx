@@ -31,6 +31,9 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
   if (!player) {
     notFound();
   }
+
+  const isDemoPlayer = player.id.startsWith('mock-');
+  const backLink = isDemoPlayer ? '/coach/demo' : '/coach';
   
   const handleSliderChange = (skill: string, value: number[]) => {
     setSkillRatings(prev => ({...prev, [skill]: value[0]}));
@@ -67,7 +70,7 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
       <main className="flex-1 p-4 md:p-8">
         <div className="max-w-5xl mx-auto">
           <div className="mb-4">
-            <Link href="/coach" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+            <Link href={backLink} className="flex items-center text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Link>
