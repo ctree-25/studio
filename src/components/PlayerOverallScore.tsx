@@ -13,31 +13,55 @@ import {
 } from '@/components/ui/chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
-const getReadiness = (score: number) => {
-    if (score >= 9.0) {
-        return { label: 'Exceptional Prospect', color: 'text-green-500' };
-    } else if (score >= 7.0) {
-        return { label: `Developing`, color: 'text-sky-500' };
+const getReadinessStyle = (score: number) => {
+    if (score >= 9) {
+        return { label: 'Proficient', color: 'text-green-500', fill: 'var(--color-green-500)' };
+    } else if (score >= 7) {
+        return { label: `Developing`, color: 'text-sky-500', fill: 'var(--color-sky-500)' };
     } else {
-        return { label: "Basic", color: 'text-orange-500' };
+        return { label: "Basic", color: 'text-orange-500', fill: 'var(--color-orange-500)' };
     }
 }
 
 export function PlayerOverallScore({ score, targetLevel }: { score: number, targetLevel: 'D1' | 'D2' | 'D3' }) {
-  const chartData = [{ name: 'score', value: score, fill: "hsl(var(--primary))" }];
-  const readiness = getReadiness(score);
+  const readiness = getReadinessStyle(score);
+  const chartData = [{ name: 'score', value: score, fill: `hsl(${readiness.fill})` }];
+
+  const chartConfig = {
+    score: {
+      label: "Score",
+      color: `hsl(${readiness.fill})`
+    },
+    green: { color: "hsl(var(--chart-2))" },
+    sky: { color: "hsl(var(--chart-1))" },
+    orange: { color: "hsl(var(--chart-5))" },
+  }
   
   return (
     <Card className="flex flex-col items-center justify-center h-full relative">
+      <style>
+        {`
+        :root {
+          --color-green-500: 142 76% 42%;
+          --color-sky-500: 199 89% 48%;
+          --color-orange-500: 25 95% 53%;
+        }
+        .dark {
+          --color-green-500: 142 71% 45%;
+          --color-sky-500: 199 98% 55%;
+          --color-orange-500: 25 95% 58%;
+        }
+        `}
+      </style>
         <CardHeader className="items-center pb-2">
-            <CardTitle>
+            <CardTitle className='text-2xl tracking-tight'>
                 Readiness: <span className={`font-semibold ${readiness.color}`}>{readiness.label}</span>
             </CardTitle>
             <CardDescription className="pt-2">Targeting {targetLevel}</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col items-center justify-center p-0 w-full relative">
             <ChartContainer
-                config={{}}
+                config={chartConfig}
                 className="mx-auto aspect-square w-full max-w-[250px]"
             >
                 <RadialBarChart
@@ -66,7 +90,7 @@ export function PlayerOverallScore({ score, targetLevel }: { score: number, targ
                 </RadialBarChart>
             </ChartContainer>
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <p className="text-4xl font-bold text-primary">{score.toFixed(1)}</p>
+                <p className="text-4xl font-bold" style={{color: `hsl(${readiness.fill})`}}>{score.toFixed(1)}</p>
             </div>
         </CardContent>
     </Card>
