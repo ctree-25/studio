@@ -19,7 +19,7 @@ const getReadiness = (score: number) => {
     } else if (score >= 7.5) {
         return { label: `Strong Candidate`, color: 'text-sky-500' };
     } else if (score >= 6.0) {
-        return { label: 'Developing Player', color: 'text-orange-500' };
+        return { label: 'Developing', color: 'text-orange-500' };
     } else {
         return { label: "Needs Improvement", color: 'text-red-500' };
     }
@@ -33,9 +33,9 @@ export function PlayerOverallScore({ score, targetLevel }: { score: number, targ
     <Card className="flex flex-col items-center justify-center h-full relative">
         <CardHeader className="items-center pb-2">
             <CardTitle className="flex items-center gap-2">
-                Overall Readiness: <span className={`text-base font-semibold ${readiness.color}`}>{readiness.label}</span>
+                Overall Readiness: <span className={`font-semibold ${readiness.color}`}>{readiness.label}</span>
             </CardTitle>
-            <CardDescription>Targeting {targetLevel}</CardDescription>
+            <CardDescription className="pt-2">Targeting {targetLevel}</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col items-center justify-center p-0 w-full relative">
             <ChartContainer
