@@ -160,11 +160,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
             </TabsList>
             <TabsContent value="skill-assessment">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Skill Assessment</CardTitle>
-                    <CardDescription>Aggregated from coach feedback.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-6">
                     {player.coachFeedback ? (
                         <div className="space-y-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
@@ -202,11 +198,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
             <TabsContent value="coach-feedback">
                 {coachAssessments && coachAssessments.length > 0 ? (
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Coach Assessments</CardTitle>
-                            <CardDescription>This feedback has been provided anonymously by vetted coaches.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
+                        <CardContent className="space-y-6 pt-6">
                             {coachAssessments.map((assessment, index) => {
                                 const coach = isDemo ? mockCoachDetails[index] : null;
                                 const isD1Coach = coach?.level === 'College (D1)';
@@ -273,10 +265,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                     </Card>
                 ) : (
                     <Card>
-                         <CardHeader>
-                            <CardTitle>Coach Assessments</CardTitle>
-                        </CardHeader>
-                        <CardContent>
+                        <CardContent className="pt-6">
                             <div className="text-center text-muted-foreground py-8">
                                 <p>No coach feedback yet. Check back later!</p>
                             </div>
@@ -286,11 +275,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
             </TabsContent>
             <TabsContent value="training-plan">
                  <Card>
-                    <CardHeader>
-                        <CardTitle>Your AI-Powered Training Plan</CardTitle>
-                        <CardDescription>Generated from coach feedback to provide actionable steps for improvement.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-6">
                         {!player.trainingPlan ? (
                              <div className="text-center py-8">
                                 <p className="text-muted-foreground mb-4">Click the button to generate a new training plan based on your latest feedback.</p>
