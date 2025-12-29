@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { PlayerOverallScore } from "@/components/PlayerOverallScore";
 
 const extractAverageSkillData = (feedback: string) => {
     const assessments: { [key: string]: number[] } = {};
@@ -95,6 +96,9 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
     
     const coachAssessments = player.coachFeedback?.split('###').filter(s => s.trim() !== '').map(s => s.trim());
     const averageSkillData = player.coachFeedback ? extractAverageSkillData(player.coachFeedback) : [];
+    const overallScore = averageSkillData.length > 0
+        ? averageSkillData.reduce((sum, { average }) => sum + average, 0) / averageSkillData.length
+        : 0;
 
     const handleGeneratePlan = async () => {
         if (!player.coachFeedback) {
@@ -150,22 +154,27 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                   </CardHeader>
                   <CardContent>
                     {player.coachFeedback ? (
-                        <>
+                        <div className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                                <Suspense fallback={<Skeleton className="w-full h-[250px]" />}>
+                                    <PlayerOverallScore score={overallScore} targetLevel={player.targetLevel} />
+                                </Suspense>
+                                <div className="space-y-4">
+                                    <h4 className="font-semibold text-center md:text-left">Average Skill Ratings</h4>
+                                    {averageSkillData.map(({ skill, average }) => (
+                                        <div key={skill} className="grid grid-cols-[1fr_2fr_auto] items-center gap-2 md:gap-4">
+                                            <span className="text-sm text-muted-foreground truncate">{skill}</span>
+                                            <Progress value={average * 10} className="h-2"/>
+                                            <span className="text-sm font-bold text-primary">{average.toFixed(1)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <Separator />
                             <Suspense fallback={<Skeleton className="w-full h-[450px]" />}>
                                 <PlayerSkillChart feedback={player.coachFeedback} />
                             </Suspense>
-                            <Separator className="my-6" />
-                            <div className="space-y-4">
-                                <h4 className="font-semibold text-center">Average Skill Ratings</h4>
-                                {averageSkillData.map(({ skill, average }) => (
-                                    <div key={skill} className="grid grid-cols-3 items-center gap-4">
-                                        <span className="text-sm text-muted-foreground">{skill}</span>
-                                        <Progress value={average * 10} className="h-2 col-span-1"/>
-                                        <span className="text-sm font-bold text-primary">{average.toFixed(1)} / 10</span>
-                                    </div>
-                                ))}
-                            </div>
-                         </>
+                         </div>
                     ): (
                         <div className="text-center text-muted-foreground py-8">
                             <p>No skill data available yet.</p>
@@ -312,3 +321,5 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
         </Tabs>
     );
 }
+
+    
