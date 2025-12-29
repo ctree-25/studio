@@ -14,33 +14,32 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 const LEVEL_TARGETS = {
-    D1: { threshold: 8.5, label: "D1 Target" },
-    D2: { threshold: 7.0, label: "D2 Target" },
-    D3: { threshold: 5.5, label: "D3 Target" },
+    D1: { threshold: 9, label: "D1 Ready" },
+    D2: { threshold: 7.5, label: "D2 Ready" },
+    D3: { threshold: 6.0, label: "D3 Ready" },
 };
 
-const getReadiness = (score: number, targetLevel: 'D1' | 'D2' | 'D3') => {
-    const target = LEVEL_TARGETS[targetLevel];
-    const difference = score - target.threshold;
-
-    if (difference >= 0) {
-        return { label: `Meeting ${targetLevel} Target`, color: 'text-green-500' };
-    } else if (difference >= -1.5) {
-        return { label: `Approaching ${targetLevel} Target`, color: 'text-orange-500' };
+const getReadiness = (score: number) => {
+    if (score >= 9.0) {
+        return { label: 'Exceptional Prospect', color: 'text-green-500' };
+    } else if (score >= 7.5) {
+        return { label: `Strong Candidate`, color: 'text-sky-500' };
+    } else if (score >= 6.0) {
+        return { label: 'Developing Player', color: 'text-orange-500' };
     } else {
-        return { label: "Needs Development", color: 'text-red-500' };
+        return { label: "Needs Improvement", color: 'text-red-500' };
     }
 }
 
 export function PlayerOverallScore({ score, targetLevel }: { score: number, targetLevel: 'D1' | 'D2' | 'D3' }) {
   const chartData = [{ name: 'score', value: score, fill: "hsl(var(--primary))" }];
-  const readiness = getReadiness(score, targetLevel);
+  const readiness = getReadiness(score);
   
   return (
     <Card className="flex flex-col items-center justify-center h-full">
         <CardHeader className="items-center pb-2">
             <CardTitle>Overall Readiness</CardTitle>
-            <CardDescription>Current Score vs. {targetLevel} Target</CardDescription>
+            <CardDescription>Based on average skill ratings</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col items-center justify-center p-0">
             <ChartContainer
@@ -74,14 +73,12 @@ export function PlayerOverallScore({ score, targetLevel }: { score: number, targ
             </ChartContainer>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
                 <p className="text-4xl font-bold font-headline">{score.toFixed(1)}</p>
+
                 <p className="text-sm text-muted-foreground">Overall Score</p>
             </div>
         </CardContent>
         <div className="p-4 text-center">
             <p className={`text-lg font-semibold ${readiness.color}`}>{readiness.label}</p>
-            <p className="text-sm text-muted-foreground">
-                Target for {targetLevel} is {LEVEL_TARGETS[targetLevel].threshold}+
-            </p>
         </div>
     </Card>
   );
