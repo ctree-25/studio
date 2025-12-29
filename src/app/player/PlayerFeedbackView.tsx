@@ -160,7 +160,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                     <PlayerOverallScore score={overallScore} targetLevel={player.targetLevel} />
                                 </Suspense>
                                 <div className="space-y-4">
-                                    <h4 className="font-semibold text-center md:text-left">Average Skill Ratings</h4>
+                                    <h3 className="font-semibold text-2xl tracking-tight text-center md:text-left">Average Skill Ratings</h3>
                                     {averageSkillData.map(({ skill, average }) => (
                                         <div key={skill} className="grid grid-cols-[1fr_2fr_auto] items-center gap-2 md:gap-4">
                                             <span className="text-sm text-muted-foreground truncate">{skill}</span>

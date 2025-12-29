@@ -32,8 +32,8 @@ export function PlayerOverallScore({ score, targetLevel }: { score: number, targ
   return (
     <Card className="flex flex-col items-center justify-center h-full relative">
         <CardHeader className="items-center pb-2">
-            <CardTitle className="flex items-center gap-2">
-                Overall Readiness: <span className={`font-semibold ${readiness.color}`}>{readiness.label}</span>
+            <CardTitle>
+                Readiness: <span className={`font-semibold ${readiness.color}`}>{readiness.label}</span>
             </CardTitle>
             <CardDescription className="pt-2">Targeting {targetLevel}</CardDescription>
         </CardHeader>
