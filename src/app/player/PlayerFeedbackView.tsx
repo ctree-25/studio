@@ -215,42 +215,30 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                     />
                                     {isDemo && (
                                         <div className="mt-4 pt-4 border-t border-border">
-                                            <Textarea
-                                                placeholder="Ask a follow-up question..."
-                                                value={replies[index] || ''}
-                                                onChange={(e) => handleReplyChange(index, e.target.value)}
-                                                className="mb-2"
-                                                disabled={isD1Coach}
-                                            />
-                                            {isD1Coach && (
-                                                <Alert variant="destructive" className="mb-2">
-                                                    <Info className="h-4 w-4" />
-                                                    <AlertDescription>
-                                                        Direct communication with NCAA Division I coaches is restricted.
-                                                    </AlertDescription>
-                                                </Alert>
-                                            )}
-                                             <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        {/* The div wrapper is necessary for tooltips on disabled buttons */}
-                                                        <div className="inline-block">
-                                                            <Button 
-                                                                onClick={() => handleReplySubmit(index)}
-                                                                disabled={isD1Coach || !replies[index]}
-                                                                size="sm"
-                                                            >
-                                                                Reply
-                                                            </Button>
-                                                        </div>
-                                                    </TooltipTrigger>
-                                                    {isD1Coach && (
-                                                        <TooltipContent>
-                                                            <p>Cannot reply to D1 coaches.</p>
-                                                        </TooltipContent>
-                                                    )}
-                                                </Tooltip>
-                                            </TooltipProvider>
+                                        {isD1Coach ? (
+                                            <Alert variant="destructive">
+                                                <Info className="h-4 w-4" />
+                                                <AlertDescription>
+                                                    Direct communication with NCAA Division I coaches is restricted by recruiting regulations.
+                                                </AlertDescription>
+                                            </Alert>
+                                        ) : (
+                                            <>
+                                                <Textarea
+                                                    placeholder="Ask a follow-up question..."
+                                                    value={replies[index] || ''}
+                                                    onChange={(e) => handleReplyChange(index, e.target.value)}
+                                                    className="mb-2"
+                                                />
+                                                <Button 
+                                                    onClick={() => handleReplySubmit(index)}
+                                                    disabled={!replies[index]}
+                                                    size="sm"
+                                                >
+                                                    Reply
+                                                </Button>
+                                            </>
+                                        )}
                                         </div>
                                     )}
                                 </div>
