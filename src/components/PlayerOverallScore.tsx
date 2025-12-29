@@ -13,12 +13,6 @@ import {
 } from '@/components/ui/chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
-const LEVEL_TARGETS = {
-    D1: { threshold: 9, label: "D1 Ready" },
-    D2: { threshold: 7.5, label: "D2 Ready" },
-    D3: { threshold: 6.0, label: "D3 Ready" },
-};
-
 const getReadiness = (score: number) => {
     if (score >= 9.0) {
         return { label: 'Exceptional Prospect', color: 'text-green-500' };
@@ -39,9 +33,9 @@ export function PlayerOverallScore({ score, targetLevel }: { score: number, targ
     <Card className="flex flex-col items-center justify-center h-full">
         <CardHeader className="items-center pb-2">
             <CardTitle>Overall Readiness</CardTitle>
-            <CardDescription>Based on average skill ratings</CardDescription>
+            <CardDescription>Targeting {targetLevel}</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col items-center justify-center p-0">
+        <CardContent className="flex-1 flex flex-col items-center justify-center p-0 w-full">
             <ChartContainer
                 config={{}}
                 className="mx-auto aspect-square w-full max-w-[250px]"
@@ -67,7 +61,7 @@ export function PlayerOverallScore({ score, targetLevel }: { score: number, targ
                     />
                      <ChartTooltip
                         cursor={false}
-                        content={<ChartTooltipContent hideLabel />}
+                        content={<ChartTooltipContent hideLabel name="Overall Score" />}
                     />
                 </RadialBarChart>
             </ChartContainer>
