@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { PlayerProfile } from "@/context/AppContext";
 import { generateTrainingPlan, GenerateTrainingPlanOutput } from "@/ai/flows/generate-training-plan";
 import { Button } from "@/components/ui/button";
-import { Loader2, Youtube } from "lucide-react";
+import { Loader2, Star, Youtube } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,6 +41,27 @@ const extractAverageSkillData = (feedback: string) => {
 
     return averageSkills;
 };
+
+const mockCoachDetails = [
+    {
+        level: 'College (D1)',
+        experience: '10+ years',
+        placedLevel: 'NCAA Division I, Professional',
+        rating: 5
+    },
+    {
+        level: 'Club',
+        experience: '6-10 years',
+        placedLevel: 'NCAA Division II, NCAA Division III',
+        rating: 4
+    },
+    {
+        level: 'HS Varsity',
+        experience: '3-5 years',
+        placedLevel: 'NCAA Division III, NAIA',
+        rating: 5
+    }
+]
 
 export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerProfile | undefined, isDemo?: boolean }) {
     const { updatePlayer } = useAppContext();
@@ -141,11 +162,26 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                     <Card>
                         <CardHeader>
                             <CardTitle>Coach Assessments</CardTitle>
-                            <CardDescription>This feedback has been provided anonymously by college coaches.</CardDescription>
+                            <CardDescription>This feedback has been provided anonymously by vetted coaches.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {coachAssessments.map((assessment, index) => (
-                               <div key={index}>
+                               <div key={index} className="p-4 border rounded-lg bg-muted/30">
+                                <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
+                                    <h4 className="font-bold text-lg">Coach #{index + 1}</h4>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({length: 5}).map((_, i) => (
+                                            <Star key={i} className={`w-4 h-4 ${i < (mockCoachDetails[index]?.rating || 0) ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/50'}`} />
+                                        ))}
+                                    </div>
+                                </div>
+                                {isDemo && mockCoachDetails[index] && (
+                                    <div className="text-xs text-muted-foreground space-y-1 mb-4">
+                                        <p><strong>Experience:</strong> {mockCoachDetails[index].experience}</p>
+                                        <p><strong>Level:</strong> {mockCoachDetails[index].level}</p>
+                                        <p><strong>Placed Athletes At:</strong> {mockCoachDetails[index].placedLevel}</p>
+                                    </div>
+                                )}
                                  <p
                                     className="whitespace-pre-wrap text-muted-foreground"
                                     dangerouslySetInnerHTML={{
@@ -154,7 +190,6 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                             .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
                                     }}
                                  />
-                                 {index < coachAssessments.length - 1 && <Separator className="my-4" />}
                                </div>
                             ))}
                         </CardContent>
@@ -182,7 +217,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                         {!player.trainingPlan ? (
                              <div className="text-center py-8">
                                 <p className="text-muted-foreground mb-4">Click the button to generate a new training plan based on your latest feedback.</p>
-                                <Button onClick={handleGeneratePlan} disabled={isLoading || isDemo}>
+                                <Button onClick={handleGeneratePlan} disabled={isLoading || !player.coachFeedback || isDemo}>
                                     {isLoading ? <Loader2 className="animate-spin" /> : 'Generate Training Plan'}
                                 </Button>
                             </div>
@@ -216,7 +251,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                 <Separator />
                                  <Button onClick={handleGeneratePlan} disabled={isLoading || isDemo} variant="outline" className="w-full">
                                     {isLoading ? <Loader2 className="animate-spin" /> : 'Regenerate Training Plan'}
-                                </Button>
+                                 </Button>
                             </div>
                         )}
                     </CardContent>
