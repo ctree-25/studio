@@ -11,9 +11,12 @@ import { Progress } from "@/components/ui/progress";
 import { PlayerProfile } from "@/context/AppContext";
 import { generateTrainingPlan, GenerateTrainingPlanOutput } from "@/ai/flows/generate-training-plan";
 import { Button } from "@/components/ui/button";
-import { Loader2, Star, Youtube } from "lucide-react";
+import { Loader2, Star, Youtube, Info } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const extractAverageSkillData = (feedback: string) => {
     const assessments: { [key: string]: number[] } = {};
@@ -66,7 +69,21 @@ const mockCoachDetails = [
 export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerProfile | undefined, isDemo?: boolean }) {
     const { updatePlayer } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
+    const [replies, setReplies] = useState<Record<number, string>>({});
     const { toast } = useToast();
+
+    const handleReplyChange = (index: number, text: string) => {
+        setReplies(prev => ({...prev, [index]: text}));
+    }
+
+    const handleReplySubmit = (index: number) => {
+        toast({
+            title: "Reply Sent!",
+            description: `Your message has been sent to Coach #${index + 1}.`,
+        });
+        // Clear the text area after submission
+        setReplies(prev => ({...prev, [index]: ''}));
+    }
 
     if (!player) {
         return (
@@ -165,33 +182,80 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                             <CardDescription>This feedback has been provided anonymously by vetted coaches.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            {coachAssessments.map((assessment, index) => (
-                               <div key={index} className="p-4 border rounded-lg bg-muted/30">
-                                <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
-                                    <h4 className="font-bold text-lg">Coach #{index + 1}</h4>
-                                    <div className="flex items-center gap-1">
-                                        {Array.from({length: 5}).map((_, i) => (
-                                            <Star key={i} className={`w-4 h-4 ${i < (mockCoachDetails[index]?.rating || 0) ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/50'}`} />
-                                        ))}
+                            {coachAssessments.map((assessment, index) => {
+                                const coach = isDemo ? mockCoachDetails[index] : null;
+                                const isD1Coach = coach?.level === 'College (D1)';
+
+                                return (
+                                <div key={index} className="p-4 border rounded-lg bg-muted/30">
+                                    <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
+                                        <h4 className="font-bold text-lg">Coach #{index + 1}</h4>
+                                        {coach && (
+                                            <div className="flex items-center gap-1">
+                                                {Array.from({length: 5}).map((_, i) => (
+                                                    <Star key={i} className={`w-4 h-4 ${i < coach.rating ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/50'}`} />
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
+                                    {coach && (
+                                        <div className="text-xs text-muted-foreground space-y-1 mb-4">
+                                            <p><strong>Experience:</strong> {coach.experience}</p>
+                                            <p><strong>Level:</strong> {coach.level}</p>
+                                            <p><strong>Placed Athletes At:</strong> {coach.placedLevel}</p>
+                                        </div>
+                                    )}
+                                    <p
+                                        className="whitespace-pre-wrap text-muted-foreground"
+                                        dangerouslySetInnerHTML={{
+                                            __html: assessment
+                                                .replace(/(Assessment:)/g, '<strong class="text-primary">$1</strong>')
+                                                .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
+                                        }}
+                                    />
+                                    {isDemo && (
+                                        <div className="mt-4 pt-4 border-t border-border">
+                                            <Textarea
+                                                placeholder="Ask a follow-up question..."
+                                                value={replies[index] || ''}
+                                                onChange={(e) => handleReplyChange(index, e.target.value)}
+                                                className="mb-2"
+                                                disabled={isD1Coach}
+                                            />
+                                            {isD1Coach && (
+                                                <Alert variant="destructive" className="mb-2">
+                                                    <Info className="h-4 w-4" />
+                                                    <AlertDescription>
+                                                        Direct communication with NCAA Division I coaches is restricted.
+                                                    </AlertDescription>
+                                                </Alert>
+                                            )}
+                                             <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        {/* The div wrapper is necessary for tooltips on disabled buttons */}
+                                                        <div className="inline-block">
+                                                            <Button 
+                                                                onClick={() => handleReplySubmit(index)}
+                                                                disabled={isD1Coach || !replies[index]}
+                                                                size="sm"
+                                                            >
+                                                                Reply
+                                                            </Button>
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    {isD1Coach && (
+                                                        <TooltipContent>
+                                                            <p>Cannot reply to D1 coaches.</p>
+                                                        </TooltipContent>
+                                                    )}
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        </div>
+                                    )}
                                 </div>
-                                {isDemo && mockCoachDetails[index] && (
-                                    <div className="text-xs text-muted-foreground space-y-1 mb-4">
-                                        <p><strong>Experience:</strong> {mockCoachDetails[index].experience}</p>
-                                        <p><strong>Level:</strong> {mockCoachDetails[index].level}</p>
-                                        <p><strong>Placed Athletes At:</strong> {mockCoachDetails[index].placedLevel}</p>
-                                    </div>
-                                )}
-                                 <p
-                                    className="whitespace-pre-wrap text-muted-foreground"
-                                    dangerouslySetInnerHTML={{
-                                        __html: assessment
-                                            .replace(/(Assessment:)/g, '<strong class="text-primary">$1</strong>')
-                                            .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
-                                    }}
-                                 />
-                               </div>
-                            ))}
+                                );
+                            })}
                         </CardContent>
                     </Card>
                 ) : (
