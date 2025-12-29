@@ -208,76 +208,78 @@ export function CoachProfileForm() {
                     />
               </div>
            </div>
-            <FormField
-                control={form.control}
-                name="profilesPerWeek"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>How many profiles would you like to review per week?</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a range" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        <SelectItem value="1-5">1-5</SelectItem>
-                        <SelectItem value="6-10">6-10</SelectItem>
-                        <SelectItem value="11-15">11-15</SelectItem>
-                        <SelectItem value="16-20">16-20</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-            <FormField
-              control={form.control}
-              name="placedPlayerLevels"
-              render={() => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel>Have you worked with former players that compete at the following levels?</FormLabel>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                  {placedPlayerLevelOptions.map((item) => (
-                    <FormField
-                      key={item.id}
-                      control={form.control}
-                      name="placedPlayerLevels"
-                      render={({ field }) => {
-                        return (
-                          <FormItem
-                            key={item.id}
-                            className="flex flex-row items-start space-x-3 space-y-0"
-                          >
+             <div className="space-y-8 mt-8">
+                 <FormField
+                  control={form.control}
+                  name="placedPlayerLevels"
+                  render={() => (
+                    <FormItem>
+                      <div className="mb-4">
+                        <FormLabel>Have you worked with former players that compete at the following levels?</FormLabel>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                      {placedPlayerLevelOptions.map((item) => (
+                        <FormField
+                          key={item.id}
+                          control={form.control}
+                          name="placedPlayerLevels"
+                          render={({ field }) => {
+                            return (
+                              <FormItem
+                                key={item.id}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(item.id)}
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([...field.value, item.id])
+                                        : field.onChange(
+                                            field.value?.filter(
+                                              (value) => value !== item.id
+                                            )
+                                          )
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                  {item.label}
+                                </FormLabel>
+                              </FormItem>
+                            )
+                          }}
+                        />
+                      ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                    control={form.control}
+                    name="profilesPerWeek"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>How many profiles would you like to review per week?</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(item.id)}
-                                onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([...field.value, item.id])
-                                    : field.onChange(
-                                        field.value?.filter(
-                                          (value) => value !== item.id
-                                        )
-                                      )
-                                }}
-                              />
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a range" />
+                            </SelectTrigger>
                             </FormControl>
-                            <FormLabel className="font-normal">
-                              {item.label}
-                            </FormLabel>
-                          </FormItem>
-                        )
-                      }}
-                    />
-                  ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                            <SelectContent>
+                            <SelectItem value="1-5">1-5</SelectItem>
+                            <SelectItem value="6-10">6-10</SelectItem>
+                            <SelectItem value="11-15">11-15</SelectItem>
+                            <SelectItem value="16-20">16-20</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
           
           <Button type="submit" disabled={isLoading} className="w-full md:w-auto mt-8">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
