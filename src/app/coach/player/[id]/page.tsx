@@ -42,7 +42,7 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
     // In a real app with multiple coaches, you'd likely want to append feedback from a specific coach.
     // Here, we just overwrite it for simplicity.
     const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
-    const fullFeedback = `Coach Assessment:\n${feedback}\n\nSkill Ratings:\n${skillRatingsText}`;
+    const fullFeedback = `Assessment:\n${feedback}\n\nSkill Ratings:\n${skillRatingsText}`;
 
     // Simulate API call
     setTimeout(() => {

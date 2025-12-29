@@ -186,7 +186,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                     className="whitespace-pre-wrap text-muted-foreground"
                                     dangerouslySetInnerHTML={{
                                         __html: assessment
-                                            .replace(/(Coach Assessment:)/g, '<strong class="text-primary">$1</strong>')
+                                            .replace(/(Assessment:)/g, '<strong class="text-primary">$1</strong>')
                                             .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
                                     }}
                                  />
