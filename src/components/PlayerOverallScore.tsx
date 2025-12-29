@@ -30,7 +30,7 @@ export function PlayerOverallScore({ score, targetLevel }: { score: number, targ
   const readiness = getReadiness(score);
   
   return (
-    <Card className="flex flex-col items-center justify-center h-full">
+    <Card className="flex flex-col items-center justify-center h-full relative">
         <CardHeader className="items-center pb-2">
             <CardTitle>Overall Readiness</CardTitle>
             <CardDescription>Targeting {targetLevel}</CardDescription>
@@ -65,11 +65,7 @@ export function PlayerOverallScore({ score, targetLevel }: { score: number, targ
                     />
                 </RadialBarChart>
             </ChartContainer>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                <p className="text-4xl font-bold font-headline">{score.toFixed(1)}</p>
-
-                <p className="text-sm text-muted-foreground">Overall Score</p>
-            </div>
+            
         </CardContent>
         <div className="p-4 text-center">
             <p className={`text-lg font-semibold ${readiness.color}`}>{readiness.label}</p>
