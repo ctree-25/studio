@@ -16,12 +16,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 const getReadiness = (score: number) => {
     if (score >= 9.0) {
         return { label: 'Exceptional Prospect', color: 'text-green-500' };
-    } else if (score >= 7.5) {
-        return { label: `Strong Candidate`, color: 'text-sky-500' };
-    } else if (score >= 6.0) {
-        return { label: 'Developing', color: 'text-orange-500' };
+    } else if (score >= 7.0) {
+        return { label: `Developing`, color: 'text-sky-500' };
     } else {
-        return { label: "Needs Improvement", color: 'text-red-500' };
+        return { label: "Basic", color: 'text-orange-500' };
     }
 }
 

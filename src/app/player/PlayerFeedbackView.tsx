@@ -67,6 +67,12 @@ const mockCoachDetails = [
     }
 ]
 
+const getRatingColor = (rating: number) => {
+    if (rating >= 9) return 'text-green-400';
+    if (rating >= 7) return 'text-sky-400';
+    return 'text-orange-400';
+}
+
 export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerProfile | undefined, isDemo?: boolean }) {
     const { updatePlayer } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
@@ -168,7 +174,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                             <div key={skill} className="grid grid-cols-[1fr_2fr_auto] items-center gap-2 md:gap-4">
                                                 <span className="text-sm text-muted-foreground truncate">{skill}</span>
                                                 <Progress value={average * 10} className="h-2"/>
-                                                <span className="text-sm font-bold text-primary">{average.toFixed(1)}</span>
+                                                <span className={`text-sm font-bold ${getRatingColor(average)}`}>{average.toFixed(1)}</span>
                                             </div>
                                         ))}
                                     </CardContent>
@@ -325,5 +331,3 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
         </Tabs>
     );
 }
-
-    
