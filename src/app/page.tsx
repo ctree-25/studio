@@ -6,18 +6,32 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/firebase';
-import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { AuthRedirect } from '@/components/AuthRedirect';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const auth = useAuth();
+  const { toast } = useToast();
 
-  const handleSignIn = (provider: 'player' | 'coach') => {
+  const handleSignIn = async (provider: 'player' | 'coach') => {
     if (!auth) return;
     const googleProvider = new GoogleAuthProvider();
-    // Store the intended role before redirecting
-    localStorage.setItem('userRole', provider);
-    signInWithRedirect(auth, googleProvider);
+    try {
+      // Store the intended role before initiating sign-in
+      localStorage.setItem('userRole', provider);
+      await signInWithPopup(auth, googleProvider);
+      // The AuthRedirect component will handle redirection on successful login.
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Sign-In Failed",
+        description: "Could not sign in with Google. Please try again.",
+      });
+      // Clear the role if sign-in fails
+      localStorage.removeItem('userRole');
+    }
   };
   
   return (
