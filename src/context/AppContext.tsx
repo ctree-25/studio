@@ -95,7 +95,7 @@ A solid all-around player with a strong foundation. Her serves are consistent bu
           suggestedVideos: [
             {
               title: "Setter Footwork Patterns - The Art of Coaching Volleyball",
-              url: "https://www.youtube.com/watch?v=example1"
+              url: "https://youtu.be/EXsMFJa-AEM?si=aE3i_fn0Ax0Y3uNn"
             },
             {
               title: "How to Jump Float Serve - Elevate Yourself",
