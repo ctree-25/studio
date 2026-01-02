@@ -184,7 +184,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                             </div>
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Coach Skill Comparison</CardTitle>
+                                    <CardTitle>Coaches' Evaluations</CardTitle>
                                     <CardDescription>See how each coach rated your skills.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -336,5 +336,3 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
         </Tabs>
     );
 }
-
-    
