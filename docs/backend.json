@@ -1,0 +1,350 @@
+{
+  "entities": {
+    "PlayerProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PlayerProfile",
+      "type": "object",
+      "description": "Represents a volleyball player's profile.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PlayerProfile entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 PlayerProfile)"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The player's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The player's last name."
+        },
+        "position": {
+          "type": "string",
+          "description": "The player's primary position (e.g., Setter, Outside Hitter)."
+        },
+        "height": {
+          "type": "string",
+          "description": "The player's height."
+        },
+        "weight": {
+          "type": "number",
+          "description": "The player's weight in pounds."
+        },
+        "graduationYear": {
+          "type": "number",
+          "description": "The player's high school graduation year."
+        },
+        "gpa": {
+          "type": "number",
+          "description": "The player's Grade Point Average."
+        },
+        "highlightVideoUrl": {
+          "type": "string",
+          "description": "URL to the player's highlight video.",
+          "format": "uri"
+        },
+        "targetLevel": {
+          "type": "string",
+          "description": "The player's target level of play (e.g., D1, D2, D3)."
+        },
+        "targetSchoolIds": {
+          "type": "array",
+          "description": "References to TargetSchools. (Relationship: PlayerProfile N:N TargetSchool)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "coachFeedbackIds": {
+          "type": "array",
+          "description": "References to CoachFeedbacks. (Relationship: PlayerProfile 1:N CoachFeedback)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "firstName",
+        "lastName",
+        "position",
+        "height",
+        "weight",
+        "graduationYear",
+        "gpa",
+        "highlightVideoUrl",
+        "targetLevel"
+      ]
+    },
+    "CoachProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CoachProfile",
+      "type": "object",
+      "description": "Represents a volleyball coach's profile.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CoachProfile entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 CoachProfile)"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The coach's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The coach's last name."
+        },
+        "school": {
+          "type": "string",
+          "description": "The school the coach is affiliated with."
+        },
+        "level": {
+          "type": "string",
+          "description": "The level of play the coach specializes in (e.g., D1, D2, D3)."
+        },
+        "playerProfileIds": {
+          "type": "array",
+          "description": "References to PlayerProfiles. (Relationship: CoachProfile 1:N PlayerProfile)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "coachFeedbackIds": {
+          "type": "array",
+          "description": "References to CoachFeedbacks. (Relationship: CoachProfile 1:N CoachFeedback)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "firstName",
+        "lastName",
+        "school",
+        "level"
+      ]
+    },
+    "CoachFeedback": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CoachFeedback",
+      "type": "object",
+      "description": "Represents feedback given by a coach to a player.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CoachFeedback entity."
+        },
+        "playerProfileId": {
+          "type": "string",
+          "description": "Reference to PlayerProfile. (Relationship: PlayerProfile 1:N CoachFeedback)"
+        },
+        "coachProfileId": {
+          "type": "string",
+          "description": "Reference to CoachProfile. (Relationship: CoachProfile 1:N CoachFeedback)"
+        },
+        "feedbackText": {
+          "type": "string",
+          "description": "The text of the feedback provided by the coach."
+        },
+        "dateGiven": {
+          "type": "string",
+          "description": "The date the feedback was given.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "playerProfileId",
+        "coachProfileId",
+        "feedbackText",
+        "dateGiven"
+      ]
+    },
+    "TargetSchool": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TargetSchool",
+      "type": "object",
+      "description": "Represents a school that a player is targeting.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TargetSchool entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the target school."
+        },
+        "level": {
+          "type": "string",
+          "description": "The level of play at the target school (e.g., D1, D2, D3)."
+        },
+        "location": {
+          "type": "string",
+          "description": "The location of the target school."
+        },
+        "playerProfileIds": {
+          "type": "array",
+          "description": "References to PlayerProfiles. (Relationship: PlayerProfile N:N TargetSchool)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "level",
+        "location"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application. This is for storing user details after they authenticate through Google Sign-In. Not for credentials.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "googleId": {
+          "type": "string",
+          "description": "The Google ID of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role (e.g., player, coach)."
+        }
+      },
+      "required": [
+        "id",
+        "googleId",
+        "email",
+        "displayName",
+        "role"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user data. This collection uses path-based ownership for managing user data. The 'userId' parameter corresponds to the Firebase Auth UID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, matching the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/playerProfiles/{playerProfileId}",
+        "definition": {
+          "entityName": "PlayerProfile",
+          "schema": {
+            "$ref": "#/backend/entities/PlayerProfile"
+          },
+          "description": "Stores player profiles, with ownership tied to the user. Only the owning user can create, read, update, or delete their profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user who owns the profile."
+            },
+            {
+              "name": "playerProfileId",
+              "description": "The unique identifier for the player profile."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/coachProfiles/{coachProfileId}",
+        "definition": {
+          "entityName": "CoachProfile",
+          "schema": {
+            "$ref": "#/backend/entities/CoachProfile"
+          },
+          "description": "Stores coach profiles, owned by the user. This collection uses path-based ownership. Denormalized 'userId' ensures authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user who owns the coach profile."
+            },
+            {
+              "name": "coachProfileId",
+              "description": "The unique identifier for the coach profile."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/playerProfiles/{playerProfileId}/coachFeedbacks/{coachFeedbackId}",
+        "definition": {
+          "entityName": "CoachFeedback",
+          "schema": {
+            "$ref": "#/backend/entities/CoachFeedback"
+          },
+          "description": "Stores coach feedback for a specific player. Requires denormalized 'coachProfileId' within each feedback document to ensure only the assigned coach can create feedback. Also contains 'playerProfileId' to ensure the feedback relates to the intended player.",
+          "params": [
+            {
+              "name": "playerProfileId",
+              "description": "The unique identifier for the player profile receiving feedback."
+            },
+            {
+              "name": "coachFeedbackId",
+              "description": "The unique identifier for the coach feedback document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/targetSchools/{targetSchoolId}",
+        "definition": {
+          "entityName": "TargetSchool",
+          "schema": {
+            "$ref": "#/backend/entities/TargetSchool"
+          },
+          "description": "Stores target schools.  This collection is publicly readable.",
+          "params": [
+            {
+              "name": "targetSchoolId",
+              "description": "The unique identifier for the target school."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to ensure authorization independence, clarity, and scalability for the CourtConnect application. We leverage path-based ownership for user-related data and membership maps where collaborative access is needed.  Crucially, we denormalize authorization data to avoid `get()` calls in security rules. Segregation of data based on access needs ensures that security rules remain simple and robust, thus adhering to the principle that 'rules are not filters.'\n\n*   **Users:** Each user has a profile document under `/users/{userId}`.\n*   **Player Profiles:** Player profiles are stored under `/users/{userId}/playerProfiles/{playerProfileId}`, ensuring that only the authenticated user can create, read, update, or delete their own profile.\n*   **Coach Profiles:** Coach profiles are stored under `/users/{userId}/coachProfiles/{coachProfileId}`, similar to player profiles, ensuring path-based ownership.\n*   **Target Schools:** Target schools are stored in a top-level `/targetSchools/{targetSchoolId}` collection. Player profiles denormalize the IDs of associated target schools in the `targetSchoolIds` array. There is no membership model involved here. Listing of schools is public, so QAPs are satisfied because we are listing public data.\n*   **Coach Feedback:** Coach feedback is stored under `/playerProfiles/{playerProfileId}/coachFeedbacks/{coachFeedbackId}`. While the feedback is associated with a player profile, we denormalize the coach's user ID into each feedback document. This allows us to verify that only the assigned coach can provide feedback.\n\nThis structure promotes authorization independence by denormalizing ownership information. This avoids complex `get()` calls in security rules, leading to more atomic operations and simplified debugging.\n\nAll collections are designed with homogeneous security postures, with clear segregation of concerns, avoiding the need to mix different access control requirements within the same collection. The model ensures the invariants of ownership and data consistency."
+  }
+}
