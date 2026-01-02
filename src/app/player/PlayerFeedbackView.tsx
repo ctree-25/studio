@@ -209,7 +209,8 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                 const coach = isDemo ? mockCoachDetails[index] : null;
                                 const isD1Coach = coach?.level === 'College (D1)';
                                 const lines = assessment.split('\n');
-                                const heading = lines[0];
+                                const heading = lines[0]; // e.g., "Previous Feedback - 07/15/2024, 10:00 AM"
+                                const timestamp = heading.replace('Previous Feedback - ', '');
                                 const body = lines.slice(1).join('\n');
 
                                 return (
@@ -217,7 +218,6 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                     <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
                                         <div className="flex-1">
                                             <h4 className="font-bold text-lg">Coach #{index + 1}</h4>
-                                            <p className="text-sm text-muted-foreground">{heading}</p>
                                         </div>
                                         {coach && (
                                             <div className="flex items-center gap-1 mt-2 sm:mt-0">
@@ -242,6 +242,8 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                                 .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
                                         }}
                                     />
+                                    <p className="text-xs text-muted-foreground/70 mt-4">{timestamp}</p>
+
                                     {isDemo && (
                                         <div className="mt-4 pt-4 border-t border-border">
                                         {isD1Coach ? (
