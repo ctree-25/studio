@@ -45,7 +45,7 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
     const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
     
     const timestamp = new Date().toLocaleString();
-    const newFeedback = `Previous Feedback - ${timestamp}\nAssessment:\n${feedback}\n\nSkill Ratings:\n${skillRatingsText}`;
+    const newFeedback = `Assessment - ${timestamp}\n${feedback}\n\nSkill Ratings:\n${skillRatingsText}`;
     
     // In a multi-coach system, this might use '###' to separate reports.
     const updatedFeedback = player.coachFeedback 
@@ -122,7 +122,7 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                 <Card>
                     <CardHeader>
                     <CardTitle>Your Feedback</CardTitle>
-                    <CardDescription>Provide your assessment for the player. Your feedback will be added to the player's profile for them to review.</CardDescription>
+                    <CardDescription>Provide your assessment for the player. Your feedback will be added to the player's profile without overwriting previous entries.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {coachAssessments && coachAssessments.length > 0 && (
@@ -130,13 +130,14 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                             {coachAssessments.map((assessment, index) => {
                                 const lines = assessment.split('\n');
                                 const heading = lines[0];
+                                const timestamp = heading.replace('Assessment - ', '');
                                 const body = lines.slice(1).join('\n');
                                 return (
                                      <div key={index}>
-                                        <h4 className='font-semibold mb-2'>{heading}</h4>
                                         <p className="whitespace-pre-wrap text-sm text-muted-foreground">
                                             {body}
                                         </p>
+                                        <p className="text-xs text-muted-foreground/70 mt-2">{timestamp}</p>
                                      </div>
                                 )
                             })}
