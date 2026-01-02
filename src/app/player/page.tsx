@@ -4,8 +4,28 @@ import { AppHeader } from '@/components/AppHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlayerProfileForm } from './PlayerProfileForm';
 import Link from 'next/link';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function PlayerPage() {
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+            router.push('/');
+        }
+    }, [user, isUserLoading, router]);
+
+    if (isUserLoading || !user) {
+        return (
+            <div className="flex flex-col min-h-screen items-center justify-center">
+                <p>Loading...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col min-h-screen">
             <AppHeader />

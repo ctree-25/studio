@@ -5,10 +5,24 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/firebase';
+import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { AuthRedirect } from '@/components/AuthRedirect';
 
 export default function Home() {
+  const auth = useAuth();
+
+  const handleSignIn = (provider: 'player' | 'coach') => {
+    if (!auth) return;
+    const googleProvider = new GoogleAuthProvider();
+    // Store the intended role before redirecting
+    localStorage.setItem('userRole', provider);
+    signInWithRedirect(auth, googleProvider);
+  };
+  
   return (
     <div className="flex flex-col min-h-screen">
+      <AuthRedirect />
       <AppHeader />
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
@@ -36,9 +50,9 @@ export default function Home() {
                         <Link href="/player/demo" className="flex-1">
                           <Button variant="secondary" className="w-full">Demo</Button>
                         </Link>
-                        <Link href="/player" className='flex-1'>
-                            <Button className="w-full">Dive In</Button>
-                        </Link>
+                        <Button onClick={() => handleSignIn('player')} className='flex-1'>
+                            Dive In
+                        </Button>
                        </div>
                     </CardContent>
                 </Card>
@@ -53,9 +67,9 @@ export default function Home() {
                           <Link href="/coach/demo" className='flex-1'>
                             <Button variant="secondary" className="w-full">Demo</Button>
                           </Link>
-                          <Link href="/coach" className="flex-1">
-                            <Button className="w-full">Dive In</Button>
-                          </Link>
+                          <Button onClick={() => handleSignIn('coach')} className="flex-1">
+                            Dive In
+                          </Button>
                        </div>
                     </CardContent>
                 </Card>
