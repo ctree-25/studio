@@ -209,8 +209,8 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                 const coach = isDemo ? mockCoachDetails[index] : null;
                                 const isD1Coach = coach?.level === 'College (D1)';
                                 const lines = assessment.split('\n');
-                                const heading = lines[0]; // e.g., "Previous Feedback - 07/15/2024, 10:00 AM"
-                                const timestamp = heading.replace('Previous Feedback - ', '');
+                                const heading = lines[0]; // e.g., "Assessment - 07/15/2024, 10:00 AM"
+                                const timestamp = heading.replace(/^(Assessment - |Previous Feedback - )/, '');
                                 const body = lines.slice(1).join('\n');
 
                                 return (

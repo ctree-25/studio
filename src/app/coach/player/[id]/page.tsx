@@ -130,7 +130,7 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                             {(() => {
                                 const lines = latestAssessment.split('\n');
                                 const heading = lines[0];
-                                const timestamp = heading.replace('Assessment - ', '');
+                                const timestamp = heading.replace(/^(Assessment - |Previous Feedback - )/, '');
                                 const body = lines.slice(1).join('\n');
                                 return (
                                      <div>
