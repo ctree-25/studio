@@ -157,7 +157,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
             <TabsList className="grid w-full grid-cols-3 h-auto">
                 <TabsTrigger value="skill-assessment" className="whitespace-normal h-auto">Skill Assessment</TabsTrigger>
                 <TabsTrigger value="coach-feedback" className="whitespace-normal h-auto">Coach Feedback</TabsTrigger>
-                <TabsTrigger value="training-plan" className="whitespace-normal h-auto">Training Plan</TabsTrigger>
+                <TabsTrigger value="training-plan" className="whitespace-normal h-auto">Training Tips</TabsTrigger>
             </TabsList>
             <TabsContent value="skill-assessment">
                 <div className="space-y-8">
@@ -336,3 +336,5 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
         </Tabs>
     );
 }
+
+    
