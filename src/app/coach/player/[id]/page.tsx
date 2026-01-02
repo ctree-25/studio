@@ -42,27 +42,33 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
   const handleSubmit = () => {
     setIsSubmitting(true);
     
-    // In a real app with multiple coaches, you'd likely want to append feedback from a specific coach.
-    // Here, we just overwrite it for simplicity.
     const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
-    const fullFeedback = `Assessment:\n${feedback}\n\nSkill Ratings:\n${skillRatingsText}`;
+    
+    const timestamp = new Date().toLocaleString();
+    const newFeedback = `Previous Feedback - ${timestamp}\nAssessment:\n${feedback}\n\nSkill Ratings:\n${skillRatingsText}`;
+    
+    // In a multi-coach system, this might use '###' to separate reports.
+    const updatedFeedback = player.coachFeedback 
+        ? `${newFeedback}###${player.coachFeedback}`
+        : newFeedback;
 
     // Simulate API call
     setTimeout(() => {
-        // In a multi-coach system, this might use '###' to separate reports.
-        // For this view, we want to show only one, so we overwrite or prepend.
-        updatePlayer(player.id, { coachFeedback: fullFeedback });
+        updatePlayer(player.id, { coachFeedback: updatedFeedback });
         setIsSubmitting(false);
+        setFeedback('');
+        setSkillRatings(SKILLS.reduce((acc, skill) => ({ ...acc, [skill]: 5 }), {}));
+
         toast({
             title: 'Feedback Submitted',
             description: `Your feedback for ${player.name} has been saved.`
         });
-        router.push('/coach');
+        router.push(backLink);
     }, 1000);
   }
 
   // Show just the first feedback entry for the coach's own review
-  const firstFeedback = player.coachFeedback?.split('###')[0].trim();
+  const coachAssessments = player.coachFeedback?.split('###').filter(s => s.trim() !== '');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -116,15 +122,24 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                 <Card>
                     <CardHeader>
                     <CardTitle>Your Feedback</CardTitle>
-                    <CardDescription>Provide your assessment for the player. Submitting new feedback will overwrite your previous feedback.</CardDescription>
+                    <CardDescription>Provide your assessment for the player. Your feedback will be added to the player's profile for them to review.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {firstFeedback && (
-                        <div className="p-4 border rounded-md bg-muted/50">
-                            <h4 className='font-semibold mb-2'>Your Previous Feedback</h4>
-                            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                                {firstFeedback}
-                            </p>
+                      {coachAssessments && coachAssessments.length > 0 && (
+                        <div className="p-4 border rounded-md bg-muted/50 max-h-60 overflow-y-auto space-y-4">
+                            {coachAssessments.map((assessment, index) => {
+                                const lines = assessment.split('\n');
+                                const heading = lines[0];
+                                const body = lines.slice(1).join('\n');
+                                return (
+                                     <div key={index}>
+                                        <h4 className='font-semibold mb-2'>{heading}</h4>
+                                        <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                                            {body}
+                                        </p>
+                                     </div>
+                                )
+                            })}
                         </div>
                       )}
                       
