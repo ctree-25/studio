@@ -326,7 +326,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                 </div>
                                 <Separator />
                                  <Button onClick={handleGeneratePlan} disabled={isLoading || isDemo} variant="outline" className="w-full">
-                                    {isLoading ? <Loader2 className="animate-spin" /> : 'Regenerate Training Plan'}
+                                    {isLoading ? <Loader2 className="animate-spin" /> : 'Generate New Training Tips'}
                                  </Button>
                             </div>
                         )}
