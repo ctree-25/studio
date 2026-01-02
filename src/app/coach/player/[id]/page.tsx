@@ -68,7 +68,7 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
   }
 
   // Show just the first feedback entry for the coach's own review
-  const coachAssessments = player.coachFeedback?.split('###').filter(s => s.trim() !== '');
+  const latestAssessment = player.coachFeedback?.split('###').filter(s => s.trim() !== '')[0];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -125,22 +125,22 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
                     <CardDescription>Provide your assessment for the player. Your feedback will be added to the player's profile without overwriting previous entries.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {coachAssessments && coachAssessments.length > 0 && (
+                      {latestAssessment && (
                         <div className="p-4 border rounded-md bg-muted/50 max-h-60 overflow-y-auto space-y-4">
-                            {coachAssessments.map((assessment, index) => {
-                                const lines = assessment.split('\n');
+                            {(() => {
+                                const lines = latestAssessment.split('\n');
                                 const heading = lines[0];
                                 const timestamp = heading.replace('Assessment - ', '');
                                 const body = lines.slice(1).join('\n');
                                 return (
-                                     <div key={index}>
+                                     <div>
                                         <p className="whitespace-pre-wrap text-sm text-muted-foreground">
                                             {body}
                                         </p>
                                         <p className="text-xs text-muted-foreground/70 mt-2">{timestamp}</p>
                                      </div>
                                 )
-                            })}
+                            })()}
                         </div>
                       )}
                       
