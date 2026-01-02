@@ -208,13 +208,19 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                             {coachAssessments.map((assessment, index) => {
                                 const coach = isDemo ? mockCoachDetails[index] : null;
                                 const isD1Coach = coach?.level === 'College (D1)';
+                                const lines = assessment.split('\n');
+                                const heading = lines[0];
+                                const body = lines.slice(1).join('\n');
 
                                 return (
                                 <div key={index} className="p-4 border rounded-lg bg-muted/30">
                                     <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
-                                        <h4 className="font-bold text-lg">Coach #{index + 1}</h4>
+                                        <div className="flex-1">
+                                            <h4 className="font-bold text-lg">Coach #{index + 1}</h4>
+                                            <p className="text-sm text-muted-foreground">{heading}</p>
+                                        </div>
                                         {coach && (
-                                            <div className="flex items-center gap-1">
+                                            <div className="flex items-center gap-1 mt-2 sm:mt-0">
                                                 {Array.from({length: 5}).map((_, i) => (
                                                     <Star key={i} className={`w-4 h-4 ${i < coach.rating ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/50'}`} />
                                                 ))}
@@ -231,7 +237,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                     <p
                                         className="whitespace-pre-wrap text-muted-foreground"
                                         dangerouslySetInnerHTML={{
-                                            __html: assessment
+                                            __html: body
                                                 .replace(/(Assessment:)/g, '<strong class="text-primary">$1</strong>')
                                                 .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
                                         }}
