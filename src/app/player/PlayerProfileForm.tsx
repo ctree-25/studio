@@ -88,20 +88,20 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
     try {
         const { profilePicture, ...playerData } = data;
         
-        let pictureObjectUrl = player?.profilePictureUrl || playerAvatar?.imageUrl || '';
+        let pictureUrl = player?.profilePictureUrl || playerAvatar?.imageUrl || '';
         if(profilePicture instanceof File) {
-            pictureObjectUrl = URL.createObjectURL(profilePicture);
+            pictureUrl = await toBase64(profilePicture);
         }
 
         const playerProfileData = {
             ...playerData,
             userId: user.uid,
-            profilePictureUrl: pictureObjectUrl,
+            profilePictureUrl: pictureUrl,
             submitted: true,
         };
 
         const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
-        setDocumentNonBlocking(playerProfileRef, playerProfileData, { merge: false });
+        setDocumentNonBlocking(playerProfileRef, playerProfileData, { merge: true });
 
       toast({
         title: 'Profile Submitted!',
@@ -138,7 +138,7 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
                 <FormLabel>Profile Picture</FormLabel>
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={avatarPreview} data-ai-hint="volleyball player" />
+                    <AvatarImage src={avatarPreview || undefined} data-ai-hint="volleyball player" />
                     <AvatarFallback>PFP</AvatarFallback>
                   </Avatar>
                   <FormControl>
@@ -148,11 +148,12 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
                               accept="image/*" 
                               className="hidden"
                               id="pfp-upload"
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                   const file = e.target.files?.[0];
                                   if(file) {
                                       field.onChange(file);
-                                      setAvatarPreview(URL.createObjectURL(file));
+                                      const dataUri = await toBase64(file);
+                                      setAvatarPreview(dataUri);
                                   }
                               }}
                           />
