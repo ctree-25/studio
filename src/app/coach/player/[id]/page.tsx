@@ -18,11 +18,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const SKILLS = ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'];
 
-export default function PlayerReviewPage({ params: { id } }: { params: { id: string } }) {
+export default function PlayerReviewPage({ params }: { params: { id: string } }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const { id } = params;
 
   const playerProfileRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
