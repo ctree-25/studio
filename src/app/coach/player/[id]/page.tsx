@@ -207,11 +207,11 @@ function PlayerAssessmentPage({ playerId }: { playerId: string }) {
   );
 }
 
-export default function PlayerReviewPage({ params }: { params: { id: string } }) {
+export default function PlayerReviewPage({ params: { id } }: { params: { id: string } }) {
   return (
     <div className="flex flex-col min-h-screen">
       <AppHeader />
-      <PlayerAssessmentPage playerId={params.id} />
+      <PlayerAssessmentPage playerId={id} />
     </div>
   );
 }
