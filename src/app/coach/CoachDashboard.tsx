@@ -7,12 +7,17 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { CheckCircle, Clock, Dot, User, MapPin, BarChart2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
 export function CoachDashboard() {
   const firestore = useFirestore();
-  const playerProfilesCollection = collection(firestore, 'playerProfiles');
+  
+  const playerProfilesCollection = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'playerProfiles');
+  }, [firestore]);
+
   const { data: players, isLoading } = useCollection(playerProfilesCollection);
   const submittedPlayers = players?.filter(p => p.submitted) || [];
 
