@@ -3,10 +3,11 @@
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDoc, useFirestore, useUser, addDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -72,7 +73,7 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
 
     try {
       const feedbackCollectionRef = collection(firestore, 'coachFeedback');
-      await addDocumentNonBlocking(feedbackCollectionRef, feedbackData);
+      await addDoc(feedbackCollectionRef, feedbackData);
 
       toast({
         title: 'Feedback Submitted',
