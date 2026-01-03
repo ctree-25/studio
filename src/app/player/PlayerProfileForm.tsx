@@ -15,8 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, Link as LinkIcon } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, setDocumentNonBlocking, useFirebaseApp } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
 const playerAvatar = PlaceHolderImages.find((p) => p.id === 'player-avatar');
@@ -47,6 +48,7 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const firebaseApp = useFirebaseApp();
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -89,8 +91,12 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
         const { profilePicture, ...playerData } = data;
         
         let pictureUrl = player?.profilePictureUrl || playerAvatar?.imageUrl || '';
-        if(profilePicture instanceof File) {
-            pictureUrl = await toBase64(profilePicture);
+        
+        if (profilePicture instanceof File) {
+            const storage = getStorage(firebaseApp);
+            const storageRef = ref(storage, `profile-pictures/${user.uid}/${profilePicture.name}`);
+            const uploadResult = await uploadBytes(storageRef, profilePicture);
+            pictureUrl = await getDownloadURL(uploadResult.ref);
         }
 
         const playerProfileData = {
