@@ -30,7 +30,7 @@ function PlayerProfileLoader() {
     
     if (isProfileLoading) {
         return (
-            <div className="flex flex-col min-h-screen items-center justify-center">
+            <div className="flex flex-col flex-1 items-center justify-center">
                 <p>Loading profile...</p>
             </div>
         );
@@ -38,7 +38,7 @@ function PlayerProfileLoader() {
     
     if (profileError) {
         return (
-            <div className="flex flex-col min-h-screen items-center justify-center">
+            <div className="flex flex-col flex-1 items-center justify-center">
                 <p>Error loading profile. Please try again later.</p>
             </div>
         )

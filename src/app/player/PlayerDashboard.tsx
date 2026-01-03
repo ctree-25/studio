@@ -13,37 +13,34 @@ interface PlayerDashboardProps {
 
 export function PlayerDashboard({ player }: PlayerDashboardProps) {
     return (
-        <div className="flex flex-col min-h-screen">
-            <AppHeader />
-            <main className="flex-1 p-4 md:p-8">
-                <div className="max-w-4xl mx-auto space-y-8">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Your Player Profile</CardTitle>
-                            <CardDescription>
-                                This is your active profile. Coaches can view this information to provide feedback.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <PlayerProfileForm player={player} />
-                        </CardContent>
-                    </Card>
+        <main className="flex-1 p-4 md:p-8">
+            <div className="max-w-4xl mx-auto space-y-8">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Your Player Profile</CardTitle>
+                        <CardDescription>
+                            This is your active profile. Coaches can view this information to provide feedback.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <PlayerProfileForm player={player} />
+                    </CardContent>
+                </Card>
 
-                    <Separator />
+                <Separator />
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Feedback &amp; Analysis</CardTitle>
-                            <CardDescription>
-                                Here is the feedback from coaches and your personalized training tips.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <PlayerFeedbackView player={player} />
-                        </CardContent>
-                    </Card>
-                </div>
-            </main>
-        </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Feedback &amp; Analysis</CardTitle>
+                        <CardDescription>
+                            Here is the feedback from coaches and your personalized training tips.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <PlayerFeedbackView player={player} />
+                    </CardContent>
+                </Card>
+            </div>
+        </main>
     );
 }

@@ -17,8 +17,6 @@ export function CoachDashboard() {
   const submittedPlayers = players?.filter(p => p.submitted) || [];
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <AppHeader />
       <main className="flex-1 p-4 md:p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
@@ -79,6 +77,5 @@ export function CoachDashboard() {
           )}
         </div>
       </main>
-    </div>
   );
 }
