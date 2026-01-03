@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "PlayerProfile": {
@@ -46,12 +47,9 @@
           "type": "string",
           "description": "URL to the player's profile picture."
         },
-        "coachFeedbackIds": {
-          "type": "array",
-          "description": "References to CoachFeedback. (Relationship: CoachFeedback 1:N PlayerProfile)",
-          "items": {
-            "type": "string"
-          }
+        "coachFeedback": {
+          "type": "string",
+          "description": "A concatenated string of all feedback provided by coaches, separated by '###'."
         }
       },
       "required": [
@@ -70,7 +68,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "CoachFeedback",
       "type": "object",
-      "description": "Represents feedback provided by a coach on a player profile.",
+      "description": "Represents feedback provided by a coach on a player profile. This entity is now deprecated in favor of storing feedback directly on the PlayerProfile.",
       "properties": {
         "id": {
           "type": "string",
@@ -108,10 +106,6 @@
       "type": "object",
       "description": "Represents a coach who can provide feedback on player profiles.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the coach."
-        },
         "userId": {
           "type": "string",
           "description": "Reference to User. (Relationship: User 1:1 Coach)"
@@ -128,13 +122,45 @@
         "affiliation": {
           "type": "string",
           "description": "The coach's school or club affiliation."
+        },
+        "experience": {
+            "type": "string",
+            "description": "Years of coaching experience."
+        },
+        "levelOfCoaching": {
+            "type": "string",
+            "enum": ["club", "hs-varsity", "college"],
+            "description": "The primary level of coaching (e.g., club, high school, college)."
+        },
+        "phone": {
+            "type": "string",
+            "description": "The coach's contact phone number."
+        },
+        "placedPlayerLevels": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Levels at which the coach has previously placed players."
+        },
+        "profileLink": {
+            "type": "string",
+            "format": "uri",
+            "description": "An optional link to a professional profile (e.g., LinkedIn)."
+        },
+        "profilesPerWeek": {
+            "type": "string",
+            "description": "The number of player profiles the coach is willing to review per week."
         }
       },
       "required": [
-        "id",
         "userId",
         "name",
-        "email"
+        "email",
+        "experience",
+        "levelOfCoaching",
+        "affiliation",
+        "phone",
+        "placedPlayerLevels",
+        "profilesPerWeek"
       ]
     },
     "User": {
@@ -219,24 +245,8 @@
             }
           ]
         }
-      },
-      {
-        "path": "/coachFeedback/{coachFeedbackId}",
-        "definition": {
-          "entityName": "CoachFeedback",
-          "schema": {
-            "$ref": "#/backend/entities/CoachFeedback"
-          },
-          "description": "Stores coach feedback on player profiles. Includes 'playerId' and 'coachId' for authorization and linking feedback to players. Coaches provide assessments tailored to player's target level.",
-          "params": [
-            {
-              "name": "coachFeedbackId",
-              "description": "The unique identifier for the coach feedback entry."
-            }
-          ]
-        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to provide secure and efficient data access for the CourtConnect application, focusing on player profiles and coach feedback. The key principle is Authorization Independence, achieved through denormalization. This eliminates the need for `get()` calls in security rules, ensuring atomic operations and easier debugging.\n\nThe structure includes:\n\n*   `/users/{userId}`: Stores user information, including roles. This collection enables role-based access control.\n*   `/playerProfiles/{playerProfileId}`: Stores player profile data. The `userId` field is denormalized to enable simple security rules that check if `request.auth.uid == resource.data.userId`.\n*   `/coaches/{coachId}`: Stores coach information, including a reference to their user ID.\n*   `/coachFeedback/{coachFeedbackId}`: Stores coach feedback. Includes `playerId` to link feedback to players and `coachId` to link feedback to coaches.\n\n**Authorization Independence (Denormalization):**\n\n*   The `playerProfiles` collection includes the `userId` field, which is a denormalization of the user's ID. This allows security rules to validate ownership without performing additional reads.  Security rules can directly check if the authenticated user ID matches the `userId` field in the profile.\n*   `CoachFeedback` stores both `playerId` and `coachId`, enabling direct validation of write access based on user roles and entity ownership without complex lookups.\n\n**QAPs (Rules are not Filters):**\n\n*   The segregation of data into distinct collections (`users`, `playerProfiles`, `coaches`, `coachFeedback`) allows for simplified security rules tailored to each data type.  Each collection enforces its own access control policies.\n*   Path-based ownership (`/users/{userId}/...`) ensures that list operations are secure by default. For example, listing player profiles is restricted to the authenticated user if they are the owner of the profiles.  Coach feedback can only be written by the coach identified in the `coachId` field.\n\n**Other Considerations:**\n\n*   The structure facilitates role-based access control (DBAC) by storing roles within the `/users/{userId}` document. This eliminates the need for custom claims.\n*   Consistent naming conventions (e.g., `userId`, `coachId`) and explicit relationships between entities enhance clarity and maintainability."
+    "reasoning": "The Firestore structure is designed to provide secure and efficient data access for the CourtConnect application, focusing on player profiles and coach feedback. The key principle is Authorization Independence, achieved through denormalization. This eliminates the need for `get()` calls in security rules, ensuring atomic operations and easier debugging.\n\nThe structure includes:\n\n*   `/users/{userId}`: Stores user information, including roles. This collection enables role-based access control.\n*   `/playerProfiles/{playerProfileId}`: Stores player profile data. The `userId` field is denormalized to enable simple security rules that check if `request.auth.uid == resource.data.userId`. Coach feedback is stored directly on this document to consolidate player data.\n*   `/coaches/{coachId}`: Stores coach information, including a reference to their user ID.\n*   The `/coachFeedback` collection is deprecated in favor of storing feedback directly on the `playerProfile` document to simplify data retrieval and security rules.\n\n**Authorization Independence (Denormalization):**\n\n*   The `playerProfiles` collection includes the `userId` field, which is a denormalization of the user's ID. This allows security rules to validate ownership without performing additional reads. Security rules can directly check if the authenticated user ID matches the `userId` field in the profile.\n*   Storing coach feedback directly on the `playerProfile` simplifies write rules; we now only need to manage permissions on a single document for updates.\n\n**QAPs (Rules are not Filters):**\n\n*   The segregation of data into distinct collections (`users`, `playerProfiles`, `coaches`) allows for simplified security rules tailored to each data type. Each collection enforces its own access control policies.\n*   Path-based ownership (`/users/{userId}/...`) ensures that list operations are secure by default.\n\n**Other Considerations:**\n\n*   The structure facilitates role-based access control (DBAC) by storing roles within the `/users/{userId}` document. This eliminates the need for custom claims.\n*   Consistent naming conventions and explicit relationships between entities enhance clarity and maintainability."
   }
 }

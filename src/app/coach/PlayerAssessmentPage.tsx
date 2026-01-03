@@ -4,11 +4,10 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDoc, useFirestore, useUser, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, updateDoc, doc as firestoreDoc, getDoc } from 'firebase/firestore';
+import { getDoc, doc as firestoreDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
 import { doc } from 'firebase/firestore';
-import { notFound } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
@@ -114,7 +113,7 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
             const existingFeedback = playerDoc.data().coachFeedback || '';
             const updatedFeedback = existingFeedback ? `${existingFeedback}\n###\n${newFeedbackEntry}` : newFeedbackEntry;
 
-            await updateDoc(playerProfileRef, {
+            updateDocumentNonBlocking(playerProfileRef, {
                 coachFeedback: updatedFeedback
             });
 
@@ -127,6 +126,8 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
             throw new Error("Player profile not found");
         }
     } catch (error) {
+      // This catch block will now primarily handle application-level errors,
+      // like the profile not being found. Permission errors are handled by the non-blocking update function.
       console.error('Failed to submit feedback:', error);
       toast({
         variant: 'destructive',

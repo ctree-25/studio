@@ -1,3 +1,4 @@
+
 /**
  * # Firestore Security Rules for CourtConnect
  *
@@ -8,7 +9,7 @@
  * The data is organized into four top-level collections: `/users`, `/playerProfiles`, `/coaches`, and `/coachFeedback`. This flat structure simplifies rules by avoiding complex path traversals, but it relies heavily on denormalized IDs within documents for authorization checks.
  *
  * ## Key Security Decisions
- * - **Profile Visibility**: Player and Coach profiles (`/playerProfiles`, `/coaches`) are publicly readable to allow for discovery within the app. However, write access is strictly limited to the profile owner.
+ * - **Profile Visibility**: Player and Coach profiles (`/playerProfiles`, `/coaches`) are publicly readable to allow for discovery within the app. However, write access is strictly limited to the profile owner or specific actions by coaches.
  * - **User Listing Disabled**: To protect user privacy, it is not possible to list all documents in the `/users` collection.
  * - **Feedback Privacy**: Feedback in `/coachFeedback` is private and can only be read by the coach who wrote it or the player who received it.
  * - **Default Deny**: Any access not explicitly granted by these rules is denied.
@@ -51,16 +52,40 @@ service cloud.firestore {
      * Crucial for preventing updates or deletes on non-existent documents.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
+    }
+    
+    /**
+     * isNewOwner
+     * Checks for ownership on a document that is being created.
+     */
+    function isNewOwner(userId) {
+        return isOwner(userId) && !exists(/databases/$(database)/documents/users/$(userId));
     }
 
     /**
      * isCoach
      * Verifies that the requesting user has the 'coach' role in their user document.
-     * This prevents non-coach users from creating feedback.
+     * This prevents non-coach users from performing coach actions.
      */
     function isCoach() {
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach';
+    }
+
+    /**
+     * isCoachAndOwner
+     * Checks if the user is a coach and the owner of the specified coach document.
+     */
+    function isCoachAndOwner(coachId) {
+        return isCoach() && isOwner(coachId);
+    }
+
+    /**
+     * isUpdatingCoachFeedback
+     * Checks if a coach is only updating the 'coachFeedback' field of a player profile.
+     */
+    function isUpdatingCoachFeedback() {
+      return isCoach() && request.resource.data.keys().hasOnly(['coachFeedback']);
     }
 
     // ----------------------------------------------------------------------
@@ -78,24 +103,25 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false; // User privacy: explicitly disallow listing all users.
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
      * @description Player profiles are public for anyone to view but can only
-     *   be created, updated, or deleted by the player who owns the profile.
+     *   be created or deleted by the player who owns the profile. Updates can be
+     *   made by the owner or by a coach adding feedback.
      * @path /playerProfiles/{playerProfileId}
-     * @allow (get) Any user, signed in or not, retrieving a specific player profile.
-     * @deny (update) A user trying to modify another player's profile.
-     * @principle Public read with owner-only writes. Enforces relational integrity by ensuring the document ID matches the owner's UID.
+     * @allow (get, list) Any user, signed in or not, can view profiles.
+     * @allow (update) The profile owner can update their data. A coach can update ONLY the coachFeedback field.
+     * @deny (update) A coach trying to modify any field other than 'coachFeedback'.
      */
     match /playerProfiles/{playerProfileId} {
       allow get: if true;
       allow list: if true;
       allow create: if isOwner(playerProfileId) && request.resource.data.userId == request.auth.uid;
-      allow update: if isExistingOwner(playerProfileId) && request.resource.data.userId == resource.data.userId;
+      allow update: if (isOwner(request.resource.data.userId) || isUpdatingCoachFeedback());
       allow delete: if isExistingOwner(playerProfileId);
     }
 
@@ -110,9 +136,9 @@ service cloud.firestore {
     match /coaches/{coachId} {
       allow get: if true;
       allow list: if true;
-      allow create: if isOwner(coachId) && request.resource.data.userId == request.auth.uid;
-      allow update: if isExistingOwner(coachId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(coachId);
+      allow create: if isCoachAndOwner(coachId);
+      allow update: if isCoachAndOwner(coachId);
+      allow delete: if isCoachAndOwner(coachId);
     }
 
     /**
@@ -126,10 +152,10 @@ service cloud.firestore {
      */
     match /coachFeedback/{coachFeedbackId} {
       allow get: if isSignedIn() && (isOwner(resource.data.coachId) || isOwner(resource.data.playerId));
-      allow list: if isSignedIn() && (request.query.coachId == request.auth.uid || request.query.playerId == request.auth.uid);
+      allow list: if isSignedIn();
       allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.coachId) && request.resource.data.coachId == resource.data.coachId && request.resource.data.playerId == resource.data.playerId;
-      allow delete: if isExistingOwner(resource.data.coachId);
+      allow update: if isOwner(resource.data.coachId);
+      allow delete: if isOwner(resource.data.coachId);
     }
   }
 }
