@@ -3,7 +3,7 @@
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDoc, useFirestore, useUser, setDocumentNonBlocking, addDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useUser, addDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
@@ -18,16 +18,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const SKILLS = ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'];
 
-export default function PlayerReviewPage({ params }: { params: { id: string } }) {
+export default function PlayerReviewPage({ params: { id } }: { params: { id: string } }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
   const playerProfileRef = useMemoFirebase(() => {
-    if (!firestore || !params.id) return null;
-    return doc(firestore, 'playerProfiles', params.id);
-  }, [firestore, params.id]);
+    if (!firestore || !id) return null;
+    return doc(firestore, 'playerProfiles', id);
+  }, [firestore, id]);
 
   const { data: player, isLoading: isPlayerLoading } = useDoc(playerProfileRef);
 
