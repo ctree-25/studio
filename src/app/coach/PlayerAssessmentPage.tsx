@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAppContext } from '@/context/AppContext';
 
 const SKILLS_BY_POSITION: Record<string, string[]> = {
     'Setter': ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'],
@@ -31,19 +32,27 @@ const SKILLS_BY_POSITION: Record<string, string[]> = {
 interface PlayerAssessmentPageProps {
     playerId: string;
     onBack: () => void;
+    isDemo?: boolean;
 }
 
-export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageProps) {
+export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: PlayerAssessmentPageProps) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { getPlayer } = useAppContext();
+
+  // For demo mode, we get data from context. For live mode, from Firestore.
+  const isLive = !isDemo;
 
   const playerProfileRef = useMemoFirebase(() => {
-    if (!firestore || !playerId) return null;
+    if (!firestore || !playerId || !isLive) return null;
     return doc(firestore, 'playerProfiles', playerId);
-  }, [firestore, playerId]);
+  }, [firestore, playerId, isLive]);
 
-  const { data: player, isLoading: isPlayerLoading } = useDoc(playerProfileRef);
+  const { data: livePlayer, isLoading: isPlayerLoading } = useDoc(playerProfileRef);
+  
+  const demoPlayer = isDemo ? getPlayer(playerId) : null;
+  const player = isDemo ? demoPlayer : livePlayer;
 
   const [feedback, setFeedback] = useState('');
   const [skillRatings, setSkillRatings] = useState<Record<string, number>>({});
@@ -64,6 +73,14 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
   };
 
   const handleSubmit = async () => {
+    if (isDemo) {
+        toast({
+            title: 'Demo Mode',
+            description: 'Feedback submission is disabled in demo mode.',
+        });
+        return;
+    }
+
     if (!user || !player || !playerProfileRef) {
       toast({
         variant: 'destructive',
@@ -121,7 +138,7 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
     }
   };
 
-  if (isPlayerLoading) {
+  if (isPlayerLoading && isLive) {
     return (
       <main className="flex-1 p-4 md:p-8">
           <div className="max-w-5xl mx-auto">
@@ -141,7 +158,19 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
   }
 
   if (!player) {
-    notFound();
+    return (
+        <main className="flex-1 p-4 md:p-8">
+            <div className="max-w-5xl mx-auto">
+                 <div className="mb-4">
+                    <Button variant="ghost" onClick={onBack} className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                    </Button>
+                </div>
+                <p>Player profile could not be loaded.</p>
+            </div>
+        </main>
+    )
   }
 
   return (
@@ -197,6 +226,7 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
                   <CardDescription>Provide your assessment for the player. Your feedback will be saved as a new evaluation.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                 <fieldset disabled={isDemo}>
                   <div className="space-y-4 pt-4">
                     <Textarea
                       value={feedback}
@@ -224,10 +254,11 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
                         </div>
                       ))}
                     </div>
-                    <Button onClick={handleSubmit} disabled={isSubmitting || !feedback} className="w-full">
+                    <Button onClick={handleSubmit} disabled={isSubmitting || !feedback || isDemo} className="w-full">
                       {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                     </Button>
                   </div>
+                  </fieldset>
                 </CardContent>
               </Card>
             </div>

@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, Clock, Dot, User, MapPin, BarChart2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CoachDemoDashboard() {
   const { players } = useAppContext();
+  const { toast } = useToast();
   const submittedPlayers = players.filter(p => p.submitted);
 
   return (
@@ -60,7 +62,7 @@ export default function CoachDemoDashboard() {
                     </div>
                   </CardContent>
                   <div className="p-6 pt-0">
-                    <Link href="/player/demo" className="w-full">
+                    <Link href={`/coach/demo/assessment?playerId=${player.id}`} className="w-full">
                         <Button className="w-full">
                             Review Profile
                         </Button>
