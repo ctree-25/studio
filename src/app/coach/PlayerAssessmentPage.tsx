@@ -3,8 +3,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDoc, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { useDoc, useFirestore, useUser, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp, updateDoc, doc as firestoreDoc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
 import { doc } from 'firebase/firestore';
@@ -47,7 +47,7 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
   };
 
   const handleSubmit = async () => {
-    if (!user || !player) {
+    if (!user || !player || !playerProfileRef) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -62,26 +62,36 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
       description: `Your feedback for ${player.name} is being saved.`,
     });
 
-    const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
-    const fullFeedbackText = `Assessment:\n${feedback}\n\nSkill Ratings:\n${skillRatingsText}`;
+    const timestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
 
-    const feedbackData = {
-        coachId: user.uid,
-        playerId: player.id,
-        feedback: fullFeedbackText,
-        date: serverTimestamp(),
-        skillRatings: skillRatings,
-    };
+    const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
+    const newFeedbackEntry = `Assessment - ${timestamp}\nAssessment:\n${feedback}\n${skillRatingsText}`;
 
     try {
-      const feedbackCollectionRef = collection(firestore, 'coachFeedback');
-      await addDocumentNonBlocking(feedbackCollectionRef, feedbackData);
+        const playerDoc = await getDoc(playerProfileRef);
+        if (playerDoc.exists()) {
+            const existingFeedback = playerDoc.data().coachFeedback || '';
+            const updatedFeedback = existingFeedback ? `${existingFeedback}\n###\n${newFeedbackEntry}` : newFeedbackEntry;
 
-      toast({
-        title: 'Feedback Submitted',
-        description: `Your feedback for ${player.name} has been saved.`,
-      });
-      onBack();
+            await updateDoc(playerProfileRef, {
+                coachFeedback: updatedFeedback
+            });
+
+            toast({
+                title: 'Feedback Submitted',
+                description: `Your feedback for ${player.name} has been saved.`,
+            });
+            onBack();
+        } else {
+            throw new Error("Player profile not found");
+        }
     } catch (error) {
       console.error('Failed to submit feedback:', error);
       toast({
@@ -209,3 +219,5 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
       </main>
   );
 }
+
+    
