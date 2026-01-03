@@ -97,7 +97,7 @@ service cloud.firestore {
        */
       match /assessments/{assessmentId} {
         // A coach can only create an assessment under their own profile.
-        allow create: if isCoach() && isOwner(coachId) && request.resource.data.coachId == coachId;
+        allow create: if isOwner(coachId) && request.resource.data.coachId == coachId;
         
         // An assessment can be read by the player it belongs to, or the coach who wrote it.
         allow get: if isSignedIn() && (request.auth.uid == resource.data.playerId || isOwner(coachId));
@@ -112,5 +112,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
