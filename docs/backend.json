@@ -47,10 +47,6 @@
           "type": "string",
           "description": "URL to the player's profile picture."
         },
-        "coachFeedback": {
-          "type": "string",
-          "description": "DEPRECATED: A concatenated string of all feedback provided by coaches, separated by '###'."
-        },
         "assessments": {
           "type": "array",
           "description": "An array of assessments provided by coaches.",

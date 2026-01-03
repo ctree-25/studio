@@ -83,17 +83,21 @@ service cloud.firestore {
     /**
      * isUpdatingAssessments
      * Checks if a coach is adding a new assessment to the player profile.
+     * A coach can only add to the assessments array. They cannot modify other fields
+     * or change existing assessments.
      */
     function isUpdatingAssessments() {
-      // A coach can only update the assessments field by adding to it.
       let newAssessments = request.resource.data.assessments;
       let oldAssessments = resource.data.assessments;
-      // Allow if assessments field is being created for the first time
+      
+      // The update is only allowed if it comes from a coach,
+      // it only touches the 'assessments' field, and
+      // it adds exactly one new item to the 'assessments' array.
       return isCoach()
-        && request.resource.data.keys().hasOnly(['assessments'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assessments'])
         && (
-            !('assessments' in resource.data) && newAssessments.size() == 1 ||
-            newAssessments.size() == oldAssessments.size() + 1
+            (!('assessments' in resource.data) && newAssessments.size() == 1) ||
+            (newAssessments.size() == oldAssessments.size() + 1)
         );
     }
 
@@ -120,17 +124,17 @@ service cloud.firestore {
     /**
      * @description Player profiles are public for anyone to view but can only
      *   be created or deleted by the player who owns the profile. Updates can be
-     *   made by the owner or by a coach adding feedback.
+     *   made by the owner or by a coach adding an assessment.
      * @path /playerProfiles/{playerProfileId}
      * @allow (get, list) Any user, signed in or not, can view profiles.
-     * @allow (update) The profile owner can update their data. A coach can update ONLY the assessments field.
-     * @deny (update) A coach trying to modify any field other than 'assessments'.
+     * @allow (update) The profile owner can update their data. A coach can update ONLY by adding to the assessments field.
+     * @deny (update) A coach trying to modify any field other than 'assessments' or change an existing assessment.
      */
     match /playerProfiles/{playerProfileId} {
       allow get: if true;
       allow list: if true;
       allow create: if isOwner(playerProfileId) && request.resource.data.userId == request.auth.uid;
-      // An update is allowed if the user owns the profile, OR a coach is adding feedback.
+      // An update is allowed if the user owns the profile OR a coach is adding a new assessment.
       allow update: if isOwner(request.resource.data.userId) || isUpdatingAssessments();
       allow delete: if isExistingOwner(playerProfileId);
     }
@@ -152,20 +156,11 @@ service cloud.firestore {
     }
 
     /**
-     * @description Manages feedback given by coaches to players. Feedback is private.
-     *   Only the coach who wrote it or the player who received it can read it.
-     *   Only the coach can create, update, or delete it.
+     * @description Manages feedback given by coaches to players. This collection is deprecated.
      * @path /coachFeedback/{coachFeedbackId}
-     * @allow (get) The player (identified by `playerId`) reading their own feedback.
-     * @deny (update) The player trying to modify the feedback they received.
-     * @principle Shared access (closed collaborators). Access is restricted to parties identified in the document's data fields.
      */
     match /coachFeedback/{coachFeedbackId} {
-      allow get: if isSignedIn() && (isOwner(resource.data.coachId) || isOwner(resource.data.playerId));
-      allow list: if isSignedIn();
-      allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
-      allow update: if isOwner(resource.data.coachId);
-      allow delete: if isOwner(resource.data.coachId);
+      allow read, write: if false; // Deprecated
     }
   }
 }
