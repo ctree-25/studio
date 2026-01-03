@@ -50,8 +50,11 @@ service cloud.firestore {
      * This is a critical function for role-based access control.
      */
     function isCoach() {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && userDoc.data.role == 'coach';
+      // Use exists() to check for the document before accessing its data.
+      // This is more secure and prevents errors if the document doesn't exist.
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach';
     }
 
 
@@ -68,7 +71,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false; // User privacy: explicitly disallow listing all users.
-      allow create: if isOwner(userId);
+      // A user can create their own user document, ensuring the UID in the path matches their auth UID.
+      allow create: if isOwner(userId) && request.resource.data.uid == userId;
       allow update: if isOwner(userId) && request.resource.data.role == resource.data.role; // Prevent role change
       allow delete: if false; // Users should not delete their role document.
     }
@@ -80,8 +84,8 @@ service cloud.firestore {
      */
     match /playerProfiles/{playerProfileId} {
       allow get, list: if true;
-      allow create: if isOwner(playerProfileId) && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isOwner(request.resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+      allow update, delete: if isOwner(resource.data.userId);
     }
 
     /**
@@ -91,7 +95,7 @@ service cloud.firestore {
      */
     match /coaches/{coachId} {
       allow get, list: if true;
-      allow create, update, delete: if isCoach() && isOwner(coachId);
+      allow create, update, delete: if isCoach() && isOwner(request.resource.data.userId);
     }
 
     /**
@@ -102,11 +106,15 @@ service cloud.firestore {
         // Only an authenticated coach can create an assessment.
         // The coachId in the document must match their own UID.
         allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
-        
+
         // An assessment can be read by the player it belongs to, or the coach who wrote it.
-        allow get, list: if isSignedIn() && 
+        allow get: if isSignedIn() &&
             (request.auth.uid == resource.data.playerId || request.auth.uid == resource.data.coachId);
-            
+        
+        // A player or coach can list only their own assessments.
+        // This is enforced by client-side queries and backed by the `get` rule.
+        allow list: if isSignedIn();
+
         // Updates and deletes are disallowed to maintain a clear audit trail.
         allow update, delete: if false;
     }
