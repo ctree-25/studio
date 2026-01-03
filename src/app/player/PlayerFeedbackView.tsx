@@ -196,7 +196,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                          </>
                     ): (
                         <div className="text-center text-muted-foreground py-8">
-                            <p>No skill data available yet.</p>
+                            <p>Pending feedback</p>
                         </div>
                     )}
                   </div>

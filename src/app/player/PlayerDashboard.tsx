@@ -18,8 +18,8 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 interface PlayerDashboardProps {
     player: PlayerProfile;
 }
-const playerAvatar = PlaceHolderImages.find((p) => p.id === 'player-avatar');
 
+const playerAvatarPlaceholder = PlaceHolderImages.find((p) => p.id === 'player-avatar');
 
 export function PlayerDashboard({ player }: PlayerDashboardProps) {
     return (
@@ -37,7 +37,7 @@ export function PlayerDashboard({ player }: PlayerDashboardProps) {
                                 </div>
                                 <div className="flex items-center gap-4">
                                      <Avatar className="h-16 w-16">
-                                        <AvatarImage src={player.profilePictureUrl || playerAvatar?.imageUrl || undefined} />
+                                        <AvatarImage src={player.profilePictureUrl || playerAvatarPlaceholder?.imageUrl} />
                                         <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <CollapsibleTrigger asChild>
