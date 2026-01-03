@@ -258,9 +258,9 @@ export function CoachProfileForm({ onProfileCreate }: { onProfileCreate: () => v
                                     checked={field.value?.includes(item.id)}
                                     onCheckedChange={(checked) => {
                                       return checked
-                                        ? field.onChange([...field.value, item.id])
+                                        ? field.onChange([...(field.value || []), item.id])
                                         : field.onChange(
-                                            field.value?.filter(
+                                            (field.value || [])?.filter(
                                               (value) => value !== item.id
                                             )
                                           )
@@ -290,7 +290,7 @@ export function CoachProfileForm({ onProfileCreate }: { onProfileCreate: () => v
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a range" />
-                            </Trigger>
+                            </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                             <SelectItem value="1-5">1-5</SelectItem>
