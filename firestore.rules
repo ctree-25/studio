@@ -6,18 +6,16 @@
  * This ruleset enforces a strict user-ownership and role-based model. Users have full control over their own data (like their profile), while interactions between different user types (like a coach giving feedback to a player) are governed by specific authorization checks. The primary goal is to ensure data privacy and integrity while allowing for public discovery of profiles.
  *
  * ## Data Structure
- * The data is organized into four top-level collections: `/users`, `/playerProfiles`, `/coaches`, and `/coachFeedback`. This flat structure simplifies rules by avoiding complex path traversals, but it relies heavily on denormalized IDs within documents for authorization checks.
+ * The data is organized into four top-level collections: `/users`, `/playerProfiles`, `/coaches`, and `/assessments`. This flat structure simplifies rules by avoiding complex path traversals.
  *
  * ## Key Security Decisions
- * - **Profile Visibility**: Player and Coach profiles (`/playerProfiles`, `/coaches`) are publicly readable to allow for discovery within the app. However, write access is strictly limited to the profile owner or specific actions by coaches.
- * - **User Listing Disabled**: To protect user privacy, it is not possible to list all documents in the `/users` collection.
- * - **Feedback Privacy**: Feedback in `/coachFeedback` is private and can only be read by the coach who wrote it or the player who received it.
+ * - **Profile Visibility**: Player and Coach profiles (`/playerProfiles`, `/coaches`) are publicly readable to allow for discovery within the app. However, write access is strictly limited to the profile owner.
+ * - **Assessment Creation**: Only authenticated coaches can create new assessments.
+ * - **Assessment Visibility**: An assessment can only be read by the player it belongs to, or the coach who wrote it.
  * - **Default Deny**: Any access not explicitly granted by these rules is denied.
  *
  * ## Denormalization for Authorization
- * To create simpler and more performant rules, this ruleset relies on denormalized data. For example:
- * - The `/playerProfiles/{profileId}` document contains a `userId` field. This allows rules to verify ownership directly (`resource.data.userId == request.auth.uid`) without performing a costly and slow `get()` on another document.
- * - Similarly, `/coachFeedback` documents contain both a `coachId` and a `playerId`, allowing rules to grant access to the correct two parties without extra lookups.
+ * To create simpler and more performant rules, this ruleset relies on denormalized data. For example, the `/playerProfiles/{profileId}` document contains a `userId` field, allowing rules to verify ownership directly (`resource.data.userId == request.auth.uid`) without performing a costly `get()`.
  *
  * ## Structural Segregation
  * Data is logically separated into distinct top-level collections based on its purpose and access patterns (e.g., public profiles vs. private data). This is more secure and performant than mixing public and private data in a single collection.
@@ -54,14 +52,6 @@ service cloud.firestore {
     function isExistingOwner(userId) {
       return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
     }
-    
-    /**
-     * isNewOwner
-     * Checks for ownership on a document that is being created.
-     */
-    function isNewOwner(userId) {
-        return isOwner(userId) && !exists(/databases/$(database)/documents/users/$(userId));
-    }
 
     /**
      * isCoach
@@ -69,7 +59,8 @@ service cloud.firestore {
      * This prevents non-coach users from performing coach actions.
      */
     function isCoach() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach';
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return isSignedIn() && userDoc.data.role == 'coach';
     }
 
     /**
@@ -80,27 +71,6 @@ service cloud.firestore {
         return isCoach() && isOwner(coachId);
     }
 
-    /**
-     * isUpdatingAssessments
-     * Checks if a coach is adding a new assessment to the player profile.
-     * A coach can only add to the assessments array. They cannot modify other fields
-     * or change existing assessments.
-     */
-    function isUpdatingAssessments() {
-      let newAssessments = request.resource.data.assessments;
-      let oldAssessments = resource.data.assessments;
-      
-      // The update is only allowed if it comes from a coach,
-      // it only touches the 'assessments' field, and
-      // it adds exactly one new item to the 'assessments' array.
-      return isCoach()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assessments'])
-        && (
-            (!('assessments' in resource.data) && newAssessments.size() == 1) ||
-            (newAssessments.size() == oldAssessments.size() + 1)
-        );
-    }
-
     // ----------------------------------------------------------------------
     // Collection Rules
     // ----------------------------------------------------------------------
@@ -109,58 +79,49 @@ service cloud.firestore {
      * @description Manages user account data. A user can create their own document
      *   and can only ever read or write their own data.
      * @path /users/{userId}
-     * @allow (create) An authenticated user creating their own user document.
-     * @deny (get) A user trying to read another user's document.
-     * @principle Restricts access to a user's own data tree.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false; // User privacy: explicitly disallow listing all users.
-      // Allow create/update for the user themselves, to set their role on first login.
-      allow create, update: if isOwner(userId); 
-      allow delete: if isOwner(userId);
+      allow create, update, delete: if isOwner(userId);
     }
 
     /**
      * @description Player profiles are public for anyone to view but can only
-     *   be created or deleted by the player who owns the profile. Updates can be
-     *   made by the owner or by a coach adding an assessment.
+     *   be created, updated, or deleted by the player who owns the profile.
      * @path /playerProfiles/{playerProfileId}
-     * @allow (get, list) Any user, signed in or not, can view profiles.
-     * @allow (update) The profile owner can update their data. A coach can update ONLY by adding to the assessments field.
-     * @deny (update) A coach trying to modify any field other than 'assessments' or change an existing assessment.
      */
     match /playerProfiles/{playerProfileId} {
-      allow get: if true;
-      allow list: if true;
+      allow get, list: if true;
       allow create: if isOwner(playerProfileId) && request.resource.data.userId == request.auth.uid;
-      // An update is allowed if the user owns the profile OR a coach is adding a new assessment.
-      allow update: if isOwner(request.resource.data.userId) || isUpdatingAssessments();
-      allow delete: if isExistingOwner(playerProfileId);
+      allow update, delete: if isOwner(request.resource.data.userId);
     }
 
     /**
      * @description Coach profiles are public for anyone to view but can only
      *   be created, updated, or deleted by the coach who owns the profile.
      * @path /coaches/{coachId}
-     * @allow (list) Any user, signed in or not, listing all available coach profiles.
-     * @deny (create) A user trying to create a coach profile for another user.
-     * @principle Public read with owner-only writes. Enforces relational integrity between the document, its internal data, and the authenticated user.
      */
     match /coaches/{coachId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isCoachAndOwner(coachId);
-      allow update: if isCoachAndOwner(coachId);
-      allow delete: if isCoachAndOwner(coachId);
+      allow get, list: if true;
+      allow create, update, delete: if isCoachAndOwner(coachId);
     }
 
     /**
-     * @description Manages feedback given by coaches to players. This collection is deprecated.
-     * @path /coachFeedback/{coachFeedbackId}
+     * @description Stores individual assessments from coaches.
+     * @path /assessments/{assessmentId}
      */
-    match /coachFeedback/{coachFeedbackId} {
-      allow read, write: if false; // Deprecated
+    match /assessments/{assessmentId} {
+        // Only an authenticated coach can create an assessment.
+        // The coachId in the document must match their own UID.
+        allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
+        
+        // An assessment can be read by the player it belongs to, or the coach who wrote it.
+        allow get, list: if isSignedIn() && 
+            (request.auth.uid == resource.data.playerId || request.auth.uid == resource.data.coachId);
+            
+        // Updates and deletes are disallowed to maintain a clear audit trail.
+        allow update, delete: if false;
     }
   }
 }

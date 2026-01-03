@@ -9,7 +9,9 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 const playerAvatar = PlaceHolderImages.find(p => p.id === 'player-avatar');
 
 export interface Assessment {
+    id: string;
     coachId: string;
+    playerId: string;
     feedbackText: string;
     skillRatings: Record<string, number>;
     timestamp: string;
@@ -27,16 +29,16 @@ export type PlayerProfile = {
   targetLevel: 'D1' | 'D2' | 'D3';
   preferredSchools: string;
   aiAnalysis?: AnalyzePlayerFootageOutput;
-  coachFeedback?: string; // DEPRECATED
-  assessments?: Assessment[];
   trainingPlan?: GenerateTrainingPlanOutput;
   submitted: boolean;
+  // This is now only used for mock data in the demo.
+  assessments?: Assessment[];
 };
 
 type AppContextType = {
   players: PlayerProfile[];
   getPlayer: (id: string) => PlayerProfile | undefined;
-  addPlayer: (player: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'videoDataUri' | 'trainingPlan'>) => PlayerProfile;
+  addPlayer: (player: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'videoDataUri' | 'trainingPlan'>) => PlayerProfile;
   updatePlayer: (playerId: string, updates: Partial<PlayerProfile>) => void;
 };
 
@@ -62,18 +64,24 @@ const MOCK_PLAYERS: PlayerProfile[] = [
         },
         assessments: [
             {
+                id: 'assessment-1',
+                playerId: 'mock-player-2',
                 coachId: 'coach-1',
                 timestamp: '2024-07-15T10:00:00Z',
                 feedbackText: 'Jamie has fantastic hands and a natural feel for the game. Her hitter background is obvious in her smart set choices. To elevate her game for the collegiate level, we need to focus on consistent footwork to get her body in position for every set, not just the perfect passes.',
                 skillRatings: { 'Setting Technique': 8, 'Footwork': 6, 'Decision Making': 8, 'Defense': 7, 'Serving': 6 },
             },
             {
+                id: 'assessment-2',
+                playerId: 'mock-player-2',
                 coachId: 'coach-2',
                 timestamp: '2024-07-14T15:30:00Z',
                 feedbackText: "Shows great potential. Her athleticism stands out, and she has a high volleyball IQ. I'd like to see her work on the speed of her sets to the pins and develop a more deceptive dump shot. Her defensive hustle is top-notch.",
                 skillRatings: { 'Setting Technique': 7, 'Footwork': 7, 'Decision Making': 9, 'Defense': 8, 'Serving': 7 },
             },
             {
+                id: 'assessment-3',
+                playerId: 'mock-player-2',
                 coachId: 'coach-3',
                 timestamp: '2024-07-12T09:00:00Z',
                 feedbackText: 'A solid all-around player with a strong foundation. Her serves are consistent but could be more aggressive. She has good court awareness and communicates well with her hitters. Improving her blocking footwork would make her a more formidable presence at the net.',
@@ -116,7 +124,7 @@ const MOCK_PLAYERS: PlayerProfile[] = [
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [players, setPlayers] = useState<PlayerProfile[]>(MOCK_PLAYERS);
 
-  const addPlayer = (playerData: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'coachFeedback' | 'videoDataUri' | 'trainingPlan'>): PlayerProfile => {
+  const addPlayer = (playerData: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'videoDataUri' | 'trainingPlan'>): PlayerProfile => {
     const newPlayer: PlayerProfile = {
         ...playerData,
         id: `player-${Date.now()}`,

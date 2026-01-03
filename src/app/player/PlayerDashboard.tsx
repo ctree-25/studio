@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -136,6 +137,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
             
             const profileDataToSave = {
                 ...data,
+                id: user.uid,
                 userId: user.uid,
                 submitted: true,
             };

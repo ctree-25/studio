@@ -3,11 +3,10 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDoc, useFirestore, useUser, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { arrayUnion } from 'firebase/firestore';
+import { useDoc, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
-import { doc } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
@@ -47,6 +46,12 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
     if (!firestore || !playerId || !isLive) return null;
     return doc(firestore, 'playerProfiles', playerId);
   }, [firestore, playerId, isLive]);
+  
+  const assessmentsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'assessments');
+    }, [firestore]);
+
 
   const { data: livePlayer, isLoading: isPlayerLoading } = useDoc(playerProfileRef);
   
@@ -80,7 +85,7 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
         return;
     }
 
-    if (!user || !player || !playerProfileRef) {
+    if (!user || !player || !assessmentsRef) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -97,15 +102,14 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
     
     const newAssessment = {
         coachId: user.uid,
+        playerId: player.id,
         feedbackText: feedback,
         skillRatings: skillRatings,
         timestamp: new Date().toISOString(),
     };
 
     try {
-        updateDocumentNonBlocking(playerProfileRef, {
-            assessments: arrayUnion(newAssessment)
-        });
+        await addDocumentNonBlocking(assessmentsRef, newAssessment);
 
         toast({
             title: 'Feedback Submitted',
@@ -113,8 +117,6 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
         });
         onBack();
     } catch (error) {
-      // This catch block will now primarily handle application-level errors.
-      // Permission errors are handled by the non-blocking update function.
       console.error('Failed to submit feedback:', error);
       toast({
         variant: 'destructive',

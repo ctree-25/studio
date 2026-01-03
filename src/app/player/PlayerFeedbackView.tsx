@@ -5,7 +5,7 @@ import { useAppContext } from "@/context/AppContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { PlayerSkillChart } from "@/components/PlayerSkillChart";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -17,8 +17,9 @@ import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PlayerOverallScore } from "@/components/PlayerOverallScore";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
 
 const extractAverageSkillData = (assessments: Assessment[]) => {
     if (!assessments || assessments.length === 0) return [];
@@ -75,10 +76,28 @@ const getRatingBarClassName = (rating: number) => {
 }
 
 export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerProfile | undefined, isDemo?: boolean }) {
-    const { updatePlayer } = useAppContext();
+    const { updatePlayer, getPlayer } = useAppContext();
+    const firestore = useFirestore();
     const [isLoading, setIsLoading] = useState(false);
     const [replies, setReplies] = useState<Record<number, string>>({});
     const { toast } = useToast();
+    const [liveAssessments, setLiveAssessments] = useState<Assessment[]>([]);
+
+    const assessmentsQuery = useMemoFirebase(() => {
+        if (!firestore || !player || isDemo) return null;
+        return query(collection(firestore, 'assessments'), where('playerId', '==', player.id));
+    }, [firestore, player, isDemo]);
+
+    const { data: fetchedAssessments, isLoading: isLoadingAssessments } = useCollection<Assessment>(assessmentsQuery);
+
+    useEffect(() => {
+        if (fetchedAssessments) {
+            setLiveAssessments(fetchedAssessments as Assessment[]);
+        }
+    }, [fetchedAssessments]);
+    
+    // For the demo view, we pull the mock player from the context which has assessments.
+    const demoPlayer = isDemo ? getPlayer('mock-player-2') : null;
 
     const handleReplyChange = (index: number, text: string) => {
         setReplies(prev => ({...prev, [index]: text}));
@@ -89,7 +108,6 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
             title: "Reply Sent!",
             description: `Your message has been sent to Coach #${index + 1}.`,
         });
-        // Clear the text area after submission
         setReplies(prev => ({...prev, [index]: ''}));
     }
 
@@ -101,7 +119,9 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
         );
     }
     
-    const coachAssessments = player.assessments || [];
+    const coachAssessments = isDemo ? (demoPlayer?.assessments || []) : liveAssessments;
+    const currentTrainingPlan = isDemo ? demoPlayer?.trainingPlan : player.trainingPlan;
+
     const averageSkillData = extractAverageSkillData(coachAssessments);
     const overallScore = averageSkillData.length > 0
         ? averageSkillData.reduce((sum, { average }) => sum + average, 0) / averageSkillData.length
@@ -130,7 +150,14 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                 coachFeedback: feedbackForTrainingPlan,
                 position: player.position,
             });
-            updatePlayer(player.id, { trainingPlan });
+
+            if (isDemo) {
+                // In demo, we update context state
+                updatePlayer('mock-player-2', { trainingPlan });
+            } else {
+                 updatePlayer(player.id, { trainingPlan });
+            }
+            
             toast({
                 title: 'Training Plan Generated!',
                 description: 'Your new training plan is ready to view.'
@@ -157,7 +184,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
             </TabsList>
             <TabsContent value="skill-assessment">
                 <div className="space-y-8">
-                    {coachAssessments.length > 0 ? (
+                    {isLoadingAssessments && !isDemo ? <Skeleton className="w-full h-[300px]" /> : coachAssessments.length > 0 ? (
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
                                 <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
@@ -198,11 +225,11 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                   </div>
             </TabsContent>
             <TabsContent value="coach-feedback">
-                {coachAssessments && coachAssessments.length > 0 ? (
+                {isLoadingAssessments && !isDemo ? <Skeleton className="w-full h-[200px]" /> : coachAssessments && coachAssessments.length > 0 ? (
                     <Card>
                         <CardContent className="space-y-6 pt-6">
                             {coachAssessments.map((assessment, index) => {
-                                const coach = isDemo ? mockCoachDetails[index] : null;
+                                const coach = isDemo ? mockCoachDetails[index % mockCoachDetails.length] : null;
                                 const isD1Coach = coach?.level === 'College (D1)';
                                 const skillRatingsText = Object.entries(assessment.skillRatings)
                                     .map(([skill, rating]) => `- <strong>${skill}:</strong> ${rating}/10`)
@@ -281,10 +308,10 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
             <TabsContent value="training-plan">
                  <Card>
                     <CardContent className="pt-6">
-                        {!player.trainingPlan ? (
+                        {!currentTrainingPlan ? (
                              <div className="text-center py-8">
                                 <p className="text-muted-foreground mb-4">Click the button to generate a new training plan based on your latest feedback.</p>
-                                <Button onClick={handleGeneratePlan} disabled={isLoading || coachAssessments.length === 0 || isDemo}>
+                                <Button onClick={handleGeneratePlan} disabled={isLoading || coachAssessments.length === 0}>
                                     {isLoading ? <Loader2 className="animate-spin" /> : 'Generate Training Plan'}
                                 </Button>
                             </div>
@@ -293,7 +320,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                 <div>
                                     <h4 className="font-semibold text-primary mb-2">Actionable Steps</h4>
                                     <ul className="space-y-4">
-                                    {player.trainingPlan.actionableSteps.map((step, index) => (
+                                    {currentTrainingPlan.actionableSteps.map((step, index) => (
                                         <li key={index} className="p-4 border rounded-md bg-muted/50">
                                             <p className="font-semibold">{step.title}</p>
                                             <p className="text-sm text-muted-foreground">{step.description}</p>
@@ -305,7 +332,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                 <div>
                                     <h4 className="font-semibold text-primary mb-2">Suggested Videos</h4>
                                     <ul className="space-y-2">
-                                        {player.trainingPlan.suggestedVideos.map((video, index) => (
+                                        {currentTrainingPlan.suggestedVideos.map((video, index) => (
                                             <li key={index}>
                                                 <Link href={video.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                                                    <Youtube className="w-4 h-4 text-red-500" />
@@ -316,7 +343,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                     </ul>
                                 </div>
                                 <Separator />
-                                 <Button onClick={handleGeneratePlan} disabled={isLoading || isDemo} variant="outline" className="w-full">
+                                 <Button onClick={handleGeneratePlan} disabled={isLoading} variant="outline" className="w-full">
                                     {isLoading ? <Loader2 className="animate-spin" /> : 'Generate New Training Tips'}
                                  </Button>
                             </div>

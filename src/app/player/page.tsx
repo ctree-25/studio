@@ -1,12 +1,13 @@
+
 'use client';
 
 import { AppHeader } from '@/components/AppHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlayerProfileForm } from './PlayerProfileForm';
 import Link from 'next/link';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { doc } from 'firebase/firestore';
 import { PlayerDashboard } from './PlayerDashboard';
 import { useForm } from 'react-hook-form';
@@ -14,13 +15,11 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 
-
 const profileFormSchema = z.object({
     name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
     position: z.string().min(2, { message: 'Position is required.' }),
     height: z.string().min(2, { message: 'Height is required.' }),
     gradYear: z.string().min(4, { message: 'Valid graduation year is required.' }),
-    profilePicture: z.any().optional(),
     targetLevel: z.enum(['D1', 'D2', 'D3'], { required_error: 'Target level is required.' }),
     preferredSchools: z.string().min(3, { message: 'Please list at least one school.' }),
     highlightVideoUrl: z.string().url({ message: 'Please enter a valid video URL.' }),
@@ -44,8 +43,6 @@ function PlayerProfileLoader() {
     const { data: playerProfile, isLoading: isProfileLoading, error: profileError } = useDoc(playerProfileRef);
 
     const handleProfileUpdate = () => {
-        // This is a bit of a hack to force a re-fetch of the document.
-        // In a more robust app, you might use a state management library to trigger this.
         window.location.reload();
     }
     
@@ -79,15 +76,16 @@ function PlayerProfileLoader() {
         });
     
         try {
-            const { profilePicture, ...playerData } = data;
             const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
             
             const profileDataToSave = {
-                ...playerData,
+                ...data,
+                id: user.uid,
                 userId: user.uid,
                 submitted: true,
             };
-            await doc(playerProfileRef).set(profileDataToSave, { merge: true });
+            
+            setDocumentNonBlocking(playerProfileRef, profileDataToSave, { merge: true });
     
             toast({
                 title: 'Profile Submitted!',
