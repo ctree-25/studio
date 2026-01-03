@@ -62,7 +62,7 @@ export function CoachDashboard({ onSelectPlayer }: CoachDashboardProps) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {players.map((player) => (
+              {players.map((player: any) => (
                 <Card key={player.id} className="flex flex-col">
                   <CardHeader>
                     <div className="flex items-center gap-4">
@@ -76,9 +76,9 @@ export function CoachDashboard({ onSelectPlayer }: CoachDashboardProps) {
                                 {player.position} <Dot /> Graduating {player.gradYear}
                             </CardDescription>
                         </div>
-                         <div className={`flex items-center text-xs px-2 py-1 rounded-full self-start ${player.coachFeedback ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                            {player.coachFeedback ? <CheckCircle className="w-3 h-3 mr-1"/> : <Clock className="w-3 h-3 mr-1"/>}
-                            {player.coachFeedback ? 'Reviewed' : 'Pending'}
+                         <div className={`flex items-center text-xs px-2 py-1 rounded-full self-start ${player.assessments && player.assessments.length > 0 ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                            {player.assessments && player.assessments.length > 0 ? <CheckCircle className="w-3 h-3 mr-1"/> : <Clock className="w-3 h-3 mr-1"/>}
+                            {player.assessments && player.assessments.length > 0 ? 'Reviewed' : 'Pending'}
                         </div>
                     </div>
                   </CardHeader>

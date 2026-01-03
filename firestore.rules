@@ -20,7 +20,7 @@
  * - Similarly, `/coachFeedback` documents contain both a `coachId` and a `playerId`, allowing rules to grant access to the correct two parties without extra lookups.
  *
  * ## Structural Segregation
- * Data is logically separated into distinct top-level collections based on its purpose and access patterns (e.g., public profiles vs. private feedback). This is more secure and performant than mixing public and private data in a single collection.
+ * Data is logically separated into distinct top-level collections based on its purpose and access patterns (e.g., public profiles vs. private data). This is more secure and performant than mixing public and private data in a single collection.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -81,15 +81,20 @@ service cloud.firestore {
     }
 
     /**
-     * isUpdatingCoachFeedback
-     * Checks if a coach is only updating the 'coachFeedback' field of a player profile.
+     * isUpdatingAssessments
+     * Checks if a coach is adding a new assessment to the player profile.
      */
-    function isUpdatingCoachFeedback() {
-      // A coach can only update the coachFeedback field.
-      // And they cannot remove existing feedback, only add to it.
-      return isCoach() 
-        && request.resource.data.keys().hasOnly(['coachFeedback'])
-        && request.resource.data.coachFeedback.size() > resource.data.coachFeedback.size();
+    function isUpdatingAssessments() {
+      // A coach can only update the assessments field by adding to it.
+      let newAssessments = request.resource.data.assessments;
+      let oldAssessments = resource.data.assessments;
+      // Allow if assessments field is being created for the first time
+      return isCoach()
+        && request.resource.data.keys().hasOnly(['assessments'])
+        && (
+            !('assessments' in resource.data) && newAssessments.size() == 1 ||
+            newAssessments.size() == oldAssessments.size() + 1
+        );
     }
 
     // ----------------------------------------------------------------------
@@ -118,15 +123,15 @@ service cloud.firestore {
      *   made by the owner or by a coach adding feedback.
      * @path /playerProfiles/{playerProfileId}
      * @allow (get, list) Any user, signed in or not, can view profiles.
-     * @allow (update) The profile owner can update their data. A coach can update ONLY the coachFeedback field.
-     * @deny (update) A coach trying to modify any field other than 'coachFeedback'.
+     * @allow (update) The profile owner can update their data. A coach can update ONLY the assessments field.
+     * @deny (update) A coach trying to modify any field other than 'assessments'.
      */
     match /playerProfiles/{playerProfileId} {
       allow get: if true;
       allow list: if true;
       allow create: if isOwner(playerProfileId) && request.resource.data.userId == request.auth.uid;
       // An update is allowed if the user owns the profile, OR a coach is adding feedback.
-      allow update: if isOwner(request.resource.data.userId) || isUpdatingCoachFeedback();
+      allow update: if isOwner(request.resource.data.userId) || isUpdatingAssessments();
       allow delete: if isExistingOwner(playerProfileId);
     }
 

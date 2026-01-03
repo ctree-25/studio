@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { AnalyzePlayerFootageOutput } from '@/ai/flows/analyze-player-footage';
@@ -6,6 +7,13 @@ import { type ReactNode, createContext, useContext, useState } from 'react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const playerAvatar = PlaceHolderImages.find(p => p.id === 'player-avatar');
+
+export interface Assessment {
+    coachId: string;
+    feedbackText: string;
+    skillRatings: Record<string, number>;
+    timestamp: string;
+}
 
 export type PlayerProfile = {
   id: string;
@@ -19,7 +27,8 @@ export type PlayerProfile = {
   targetLevel: 'D1' | 'D2' | 'D3';
   preferredSchools: string;
   aiAnalysis?: AnalyzePlayerFootageOutput;
-  coachFeedback?: string;
+  coachFeedback?: string; // DEPRECATED
+  assessments?: Assessment[];
   trainingPlan?: GenerateTrainingPlanOutput;
   submitted: boolean;
 };
@@ -51,32 +60,26 @@ const MOCK_PLAYERS: PlayerProfile[] = [
             weaknesses: 'Footwork to the ball can be inconsistent, especially on out-of-system plays. Serve could be more aggressive to put opponents on the defensive.',
             overallAssessment: 'A high-potential D3 setter with a great foundation. Her experience as a hitter is a significant asset. With refined footwork and a more aggressive serve, she could become a top-tier setter at the D3 level. Her coachability and on-court leadership are evident.'
         },
-        coachFeedback: `Assessment - 07/15/2024, 10:00 AM
-Assessment:
-Jamie has fantastic hands and a natural feel for the game. Her hitter background is obvious in her smart set choices. To elevate her game for the collegiate level, we need to focus on consistent footwork to get her body in position for every set, not just the perfect passes.
-- Setting Technique: 8/10
-- Footwork: 6/10
-- Decision Making: 8/10
-- Defense: 7/10
-- Serving: 6/10
-###
-Assessment - 07/14/2024, 3:30 PM
-Assessment:
-Shows great potential. Her athleticism stands out, and she has a high volleyball IQ. I'd like to see her work on the speed of her sets to the pins and develop a more deceptive dump shot. Her defensive hustle is top-notch.
-- Setting Technique: 7/10
-- Footwork: 7/10
-- Decision Making: 9/10
-- Defense: 8/10
-- Serving: 7/10
-###
-Assessment - 07/12/2024, 9:00 AM
-Assessment:
-A solid all-around player with a strong foundation. Her serves are consistent but could be more aggressive. She has good court awareness and communicates well with her hitters. Improving her blocking footwork would make her a more formidable presence at the net.
-- Setting Technique: 9/10
-- Footwork: 8/10
-- Decision Making: 7/10
-- Defense: 6/10
-- Serving: 7/10`,
+        assessments: [
+            {
+                coachId: 'coach-1',
+                timestamp: '2024-07-15T10:00:00Z',
+                feedbackText: 'Jamie has fantastic hands and a natural feel for the game. Her hitter background is obvious in her smart set choices. To elevate her game for the collegiate level, we need to focus on consistent footwork to get her body in position for every set, not just the perfect passes.',
+                skillRatings: { 'Setting Technique': 8, 'Footwork': 6, 'Decision Making': 8, 'Defense': 7, 'Serving': 6 },
+            },
+            {
+                coachId: 'coach-2',
+                timestamp: '2024-07-14T15:30:00Z',
+                feedbackText: "Shows great potential. Her athleticism stands out, and she has a high volleyball IQ. I'd like to see her work on the speed of her sets to the pins and develop a more deceptive dump shot. Her defensive hustle is top-notch.",
+                skillRatings: { 'Setting Technique': 7, 'Footwork': 7, 'Decision Making': 9, 'Defense': 8, 'Serving': 7 },
+            },
+            {
+                coachId: 'coach-3',
+                timestamp: '2024-07-12T09:00:00Z',
+                feedbackText: 'A solid all-around player with a strong foundation. Her serves are consistent but could be more aggressive. She has good court awareness and communicates well with her hitters. Improving her blocking footwork would make her a more formidable presence at the net.',
+                skillRatings: { 'Setting Technique': 9, 'Footwork': 8, 'Decision Making': 7, 'Defense': 6, 'Serving': 7 },
+            }
+        ],
         trainingPlan: {
           actionableSteps: [
             {

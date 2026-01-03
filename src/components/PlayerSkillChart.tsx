@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -13,51 +14,37 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { Assessment } from '@/context/AppContext';
+
 
 interface PlayerSkillChartProps {
-    feedback?: string;
+    assessments?: Assessment[];
 }
 
-const extractSkillData = (feedback: string) => {
-    const assessments: { [key: string]: { [key: string]: number } } = {};
+const extractSkillData = (assessments: Assessment[]) => {
     const allSkills = new Set<string>();
+    const chartDataMap: { [key: string]: any } = {};
 
-    const feedbackSections = feedback.split('###').filter(s => s.trim() !== '');
-
-    feedbackSections.forEach((section, index) => {
-        const coachKey = `coach${index + 1}`;
-        assessments[coachKey] = {};
-        const lines = section.trim().split('\n');
-        lines.forEach(line => {
-            const match = line.match(/- ([\w\s]+): (\d+)\/10/);
-            if (match) {
-                const skillName = match[1].trim();
-                const rating = parseInt(match[2], 10);
-                assessments[coachKey][skillName] = rating;
-                allSkills.add(skillName);
+    assessments.forEach((assessment, index) => {
+        Object.entries(assessment.skillRatings).forEach(([skill, rating]) => {
+            allSkills.add(skill);
+            if (!chartDataMap[skill]) {
+                chartDataMap[skill] = { skill };
             }
+            chartDataMap[skill][`coach${index + 1}`] = rating;
         });
     });
 
-    const chartData: any[] = [];
-    allSkills.forEach(skill => {
-        const skillEntry: { [key: string]: any } = { skill };
-        Object.keys(assessments).forEach(coachKey => {
-            skillEntry[coachKey] = assessments[coachKey][skill] || 0;
-        });
-        chartData.push(skillEntry);
-    });
-
-    return chartData;
+    return Array.from(allSkills).map(skill => chartDataMap[skill]);
 }
 
 
-export function PlayerSkillChart({ feedback }: PlayerSkillChartProps) {
-    if (!feedback) {
+export function PlayerSkillChart({ assessments }: PlayerSkillChartProps) {
+    if (!assessments || assessments.length === 0) {
         return null;
     }
 
-    const chartData = extractSkillData(feedback);
+    const chartData = extractSkillData(assessments);
     
     const chartConfig = {
         coach1: {
@@ -96,27 +83,21 @@ export function PlayerSkillChart({ feedback }: PlayerSkillChartProps) {
           <PolarAngleAxis dataKey="skill" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
           <PolarGrid gridType='polygon' />
           <Legend />
-          <Radar
-            name="Coach 1"
-            dataKey="coach1"
-            fill="var(--color-coach1)"
-            fillOpacity={0.2}
-            stroke="var(--color-coach1)"
-          />
-          <Radar
-            name="Coach 2"
-            dataKey="coach2"
-            fill="var(--color-coach2)"
-            fillOpacity={0.2}
-            stroke="var(--color-coach2)"
-          />
-           <Radar
-            name="Coach 3"
-            dataKey="coach3"
-            fill="var(--color-coach3)"
-            fillOpacity={0.2}
-            stroke="var(--color-coach3)"
-          />
+          {Object.keys(chartConfig).map((key, index) => {
+            if (assessments.length > index) {
+                return (
+                    <Radar
+                        key={key}
+                        name={`Coach ${index + 1}`}
+                        dataKey={key}
+                        fill={`var(--color-${key})`}
+                        fillOpacity={0.2}
+                        stroke={`var(--color-${key})`}
+                    />
+                )
+            }
+            return null;
+          })}
         </RadarChart>
       </ChartContainer>
   );

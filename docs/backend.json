@@ -49,7 +49,33 @@
         },
         "coachFeedback": {
           "type": "string",
-          "description": "A concatenated string of all feedback provided by coaches, separated by '###'."
+          "description": "DEPRECATED: A concatenated string of all feedback provided by coaches, separated by '###'."
+        },
+        "assessments": {
+          "type": "array",
+          "description": "An array of assessments provided by coaches.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "coachId": {
+                "type": "string"
+              },
+              "feedbackText": {
+                "type": "string"
+              },
+              "skillRatings": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "number"
+                }
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": ["coachId", "feedbackText", "skillRatings", "timestamp"]
+          }
         }
       },
       "required": [

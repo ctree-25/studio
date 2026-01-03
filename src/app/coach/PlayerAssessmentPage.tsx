@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDoc, useFirestore, useUser, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { getDoc, doc as firestoreDoc } from 'firebase/firestore';
+import { arrayUnion } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
 import { doc } from 'firebase/firestore';
@@ -94,40 +94,27 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
       title: 'Submitting Feedback...',
       description: `Your feedback for ${player.name} is being saved.`,
     });
-
-    const timestamp = new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      });
-
-    const skillRatingsText = positionSkills.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
-    const newFeedbackEntry = `Assessment - ${timestamp}\nAssessment:\n${feedback}\n${skillRatingsText}`;
+    
+    const newAssessment = {
+        coachId: user.uid,
+        feedbackText: feedback,
+        skillRatings: skillRatings,
+        timestamp: new Date().toISOString(),
+    };
 
     try {
-        const playerDoc = await getDoc(playerProfileRef);
-        if (playerDoc.exists()) {
-            const existingFeedback = playerDoc.data().coachFeedback || '';
-            const updatedFeedback = existingFeedback ? `${existingFeedback}\n###\n${newFeedbackEntry}` : newFeedbackEntry;
+        updateDocumentNonBlocking(playerProfileRef, {
+            assessments: arrayUnion(newAssessment)
+        });
 
-            updateDocumentNonBlocking(playerProfileRef, {
-                coachFeedback: updatedFeedback
-            });
-
-            toast({
-                title: 'Feedback Submitted',
-                description: `Your feedback for ${player.name} has been saved.`,
-            });
-            onBack();
-        } else {
-            throw new Error("Player profile not found");
-        }
+        toast({
+            title: 'Feedback Submitted',
+            description: `Your feedback for ${player.name} has been saved.`,
+        });
+        onBack();
     } catch (error) {
-      // This catch block will now primarily handle application-level errors,
-      // like the profile not being found. Permission errors are handled by the non-blocking update function.
+      // This catch block will now primarily handle application-level errors.
+      // Permission errors are handled by the non-blocking update function.
       console.error('Failed to submit feedback:', error);
       toast({
         variant: 'destructive',

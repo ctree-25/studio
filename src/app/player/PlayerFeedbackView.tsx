@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useAppContext } from "@/context/AppContext";
@@ -10,7 +9,7 @@ import { Suspense, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { PlayerProfile } from "@/context/AppContext";
+import { PlayerProfile, Assessment } from "@/context/AppContext";
 import { generateTrainingPlan, GenerateTrainingPlanOutput } from "@/ai/flows/generate-training-plan";
 import { Button } from "@/components/ui/button";
 import { Loader2, Star, Youtube, Info } from "lucide-react";
@@ -21,31 +20,25 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PlayerOverallScore } from "@/components/PlayerOverallScore";
 
-const extractAverageSkillData = (feedback: string) => {
-    const assessments: { [key: string]: number[] } = {};
-    const feedbackSections = feedback.split('###').filter(s => s.trim() !== '');
+const extractAverageSkillData = (assessments: Assessment[]) => {
+    if (!assessments || assessments.length === 0) return [];
 
-    feedbackSections.forEach((section) => {
-        const lines = section.trim().split('\n');
-        lines.forEach(line => {
-            const match = line.match(/- ([\w\s]+): (\d+)\/10/);
-            if (match) {
-                const skillName = match[1].trim();
-                const rating = parseInt(match[2], 10);
-                if (!assessments[skillName]) {
-                    assessments[skillName] = [];
-                }
-                assessments[skillName].push(rating);
+    const skillTotals: { [key: string]: { total: number, count: number } } = {};
+
+    assessments.forEach(assessment => {
+        for (const [skill, rating] of Object.entries(assessment.skillRatings)) {
+            if (!skillTotals[skill]) {
+                skillTotals[skill] = { total: 0, count: 0 };
             }
-        });
+            skillTotals[skill].total += rating;
+            skillTotals[skill].count += 1;
+        }
     });
 
-    const averageSkills = Object.entries(assessments).map(([skill, ratings]) => {
-        const average = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
-        return { skill, average: parseFloat(average.toFixed(1)) };
-    });
-
-    return averageSkills;
+    return Object.entries(skillTotals).map(([skill, { total, count }]) => ({
+        skill,
+        average: parseFloat((total / count).toFixed(1)),
+    }));
 };
 
 const mockCoachDetails = [
@@ -108,14 +101,16 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
         );
     }
     
-    const coachAssessments = player.coachFeedback?.split('###').filter(s => s.trim() !== '').map(s => s.trim());
-    const averageSkillData = player.coachFeedback ? extractAverageSkillData(player.coachFeedback) : [];
+    const coachAssessments = player.assessments || [];
+    const averageSkillData = extractAverageSkillData(coachAssessments);
     const overallScore = averageSkillData.length > 0
         ? averageSkillData.reduce((sum, { average }) => sum + average, 0) / averageSkillData.length
         : 0;
+        
+    const feedbackForTrainingPlan = coachAssessments.map(a => a.feedbackText).join('\n\n');
 
     const handleGeneratePlan = async () => {
-        if (!player.coachFeedback) {
+        if (!feedbackForTrainingPlan) {
             toast({
                 variant: 'destructive',
                 title: 'No Feedback Available',
@@ -132,7 +127,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
 
         try {
             const trainingPlan = await generateTrainingPlan({
-                coachFeedback: player.coachFeedback,
+                coachFeedback: feedbackForTrainingPlan,
                 position: player.position,
             });
             updatePlayer(player.id, { trainingPlan });
@@ -162,7 +157,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
             </TabsList>
             <TabsContent value="skill-assessment">
                 <div className="space-y-8">
-                    {player.coachFeedback ? (
+                    {coachAssessments.length > 0 ? (
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
                                 <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
@@ -190,7 +185,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                 </CardHeader>
                                 <CardContent>
                                     <Suspense fallback={<Skeleton className="w-full h-[450px]" />}>
-                                        <PlayerSkillChart feedback={player.coachFeedback} />
+                                        <PlayerSkillChart assessments={coachAssessments} />
                                     </Suspense>
                                 </CardContent>
                             </Card>
@@ -209,11 +204,11 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                             {coachAssessments.map((assessment, index) => {
                                 const coach = isDemo ? mockCoachDetails[index] : null;
                                 const isD1Coach = coach?.level === 'College (D1)';
-                                const lines = assessment.split('\n');
-                                const heading = lines[0]; // e.g., "Assessment - 07/15/2024, 10:00 AM"
-                                const timestamp = heading.replace(/^(Assessment - |Previous Feedback - )/, '');
-                                const body = lines.slice(1).join('\n');
-
+                                const skillRatingsText = Object.entries(assessment.skillRatings)
+                                    .map(([skill, rating]) => `- <strong>${skill}:</strong> ${rating}/10`)
+                                    .join('\n');
+                                const body = `<strong class="text-primary">Assessment:</strong>\n${assessment.feedbackText}\n\n${skillRatingsText}`;
+                                
                                 return (
                                 <div key={index} className="p-4 border rounded-lg bg-muted/30">
                                     <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
@@ -237,14 +232,9 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                     )}
                                     <p
                                         className="whitespace-pre-wrap text-muted-foreground"
-                                        dangerouslySetInnerHTML={{
-                                            __html: body
-                                                .replace(/(Assessment:)/g, '<strong class="text-primary">$1</strong>')
-                                                .replace(/- ([\w\s]+): (\d+\/10)/g, '- <strong>$1:</strong> $2')
-                                        }}
+                                        dangerouslySetInnerHTML={{ __html: body }}
                                     />
-                                    <p className="text-xs text-muted-foreground/70 mt-4">{timestamp}</p>
-
+                                     <p className="text-xs text-muted-foreground/70 mt-4">{new Date(assessment.timestamp).toLocaleString()}</p>
                                     {isDemo && (
                                         <div className="mt-4 pt-4 border-t border-border">
                                         {isD1Coach ? (
@@ -294,7 +284,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                         {!player.trainingPlan ? (
                              <div className="text-center py-8">
                                 <p className="text-muted-foreground mb-4">Click the button to generate a new training plan based on your latest feedback.</p>
-                                <Button onClick={handleGeneratePlan} disabled={isLoading || !player.coachFeedback || isDemo}>
+                                <Button onClick={handleGeneratePlan} disabled={isLoading || coachAssessments.length === 0 || isDemo}>
                                     {isLoading ? <Loader2 className="animate-spin" /> : 'Generate Training Plan'}
                                 </Button>
                             </div>
