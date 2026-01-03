@@ -9,14 +9,24 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
 import { doc } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const SKILLS = ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'];
+const SKILLS_BY_POSITION: Record<string, string[]> = {
+    'Setter': ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'],
+    'Outside Hitter': ['Attacking', 'Passing / Serve Receive', 'Defense', 'Blocking', 'Serving'],
+    'Middle Blocker': ['Blocking', 'Attacking', 'Footwork', 'Serving', 'Court Vision'],
+    'Libero': ['Passing / Serve Receive', 'Digging', 'Court Awareness', 'Setting (Out of System)', 'Communication'],
+    'Defensive Specialist': ['Passing / Serve Receive', 'Digging', 'Court Awareness', 'Setting (Out of System)', 'Communication'],
+    'Opposite': ['Attacking', 'Blocking', 'Defense', 'Serving', 'Backup Setting'],
+    'Right Side Hitter': ['Attacking', 'Blocking', 'Defense', 'Serving', 'Backup Setting'],
+    'Default': ['Overall Technique', 'Athleticism', 'Court Awareness', 'Hustle', 'Teamwork'],
+};
+
 
 interface PlayerAssessmentPageProps {
     playerId: string;
@@ -36,10 +46,17 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
   const { data: player, isLoading: isPlayerLoading } = useDoc(playerProfileRef);
 
   const [feedback, setFeedback] = useState('');
-  const [skillRatings, setSkillRatings] = useState<Record<string, number>>(() =>
-    SKILLS.reduce((acc, skill) => ({ ...acc, [skill]: 5 }), {})
-  );
+  const [skillRatings, setSkillRatings] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const positionSkills = (player?.position && SKILLS_BY_POSITION[player.position]) || SKILLS_BY_POSITION['Default'];
+  
+  useEffect(() => {
+    if (player) {
+      const initialRatings = positionSkills.reduce((acc, skill) => ({ ...acc, [skill]: 5 }), {});
+      setSkillRatings(initialRatings);
+    }
+  }, [player, positionSkills]);
 
 
   const handleSliderChange = (skill: string, value: number[]) => {
@@ -71,7 +88,7 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
         hour12: true,
       });
 
-    const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
+    const skillRatingsText = positionSkills.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
     const newFeedbackEntry = `Assessment - ${timestamp}\nAssessment:\n${feedback}\n${skillRatingsText}`;
 
     try {
@@ -190,7 +207,7 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
                     />
                     <div className="space-y-6">
                       <h4 className="font-semibold">Skill Ratings</h4>
-                      {SKILLS.map(skill => (
+                      {positionSkills.map(skill => (
                         <div key={skill} className="grid gap-2">
                           <div className="flex justify-between items-center">
                             <Label htmlFor={`slider-${skill}`}>{skill}</Label>
@@ -201,7 +218,7 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
                             min={1}
                             max={10}
                             step={1}
-                            value={[skillRatings[skill]]}
+                            value={[skillRatings[skill] || 5]}
                             onValueChange={(value) => handleSliderChange(skill, value)}
                           />
                         </div>
@@ -219,5 +236,3 @@ export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageP
       </main>
   );
 }
-
-    
