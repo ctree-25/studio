@@ -45,31 +45,15 @@ service cloud.firestore {
     }
 
     /**
-     * isExistingOwner
-     * Checks for ownership on a document that must already exist.
-     * Crucial for preventing updates or deletes on non-existent documents.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
-    }
-
-    /**
      * isCoach
      * Verifies that the requesting user has the 'coach' role in their user document.
-     * This prevents non-coach users from performing coach actions.
+     * This is a critical function for role-based access control.
      */
     function isCoach() {
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return isSignedIn() && userDoc.data.role == 'coach';
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && userDoc.data.role == 'coach';
     }
 
-    /**
-     * isCoachAndOwner
-     * Checks if the user is a coach and the owner of the specified coach document.
-     */
-    function isCoachAndOwner(coachId) {
-        return isCoach() && isOwner(coachId);
-    }
 
     // ----------------------------------------------------------------------
     // Collection Rules
@@ -77,13 +61,16 @@ service cloud.firestore {
 
     /**
      * @description Manages user account data. A user can create their own document
-     *   and can only ever read or write their own data.
+     *   and can only ever read or update their own data. The role cannot be changed
+     *   after creation.
      * @path /users/{userId}
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false; // User privacy: explicitly disallow listing all users.
-      allow create, update, delete: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && request.resource.data.role == resource.data.role; // Prevent role change
+      allow delete: if false; // Users should not delete their role document.
     }
 
     /**
@@ -104,7 +91,7 @@ service cloud.firestore {
      */
     match /coaches/{coachId} {
       allow get, list: if true;
-      allow create, update, delete: if isCoachAndOwner(coachId);
+      allow create, update, delete: if isCoach() && isOwner(coachId);
     }
 
     /**
