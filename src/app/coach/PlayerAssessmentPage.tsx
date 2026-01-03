@@ -1,7 +1,6 @@
 
 'use client';
 
-import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDoc, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
@@ -9,8 +8,7 @@ import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
 import { doc } from 'firebase/firestore';
-import Link from 'next/link';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
@@ -20,10 +18,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const SKILLS = ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'];
 
-function PlayerAssessmentPage({ playerId }: { playerId: string }) {
+interface PlayerAssessmentPageProps {
+    playerId: string;
+    onBack: () => void;
+}
+
+export function PlayerAssessmentPage({ playerId, onBack }: PlayerAssessmentPageProps) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const router = useRouter();
   const { toast } = useToast();
 
   const playerProfileRef = useMemoFirebase(() => {
@@ -73,13 +75,13 @@ function PlayerAssessmentPage({ playerId }: { playerId: string }) {
 
     try {
       const feedbackCollectionRef = collection(firestore, 'coachFeedback');
-      addDocumentNonBlocking(feedbackCollectionRef, feedbackData);
+      await addDocumentNonBlocking(feedbackCollectionRef, feedbackData);
 
       toast({
         title: 'Feedback Submitted',
         description: `Your feedback for ${player.name} has been saved.`,
       });
-      router.push('/coach');
+      onBack();
     } catch (error) {
       console.error('Failed to submit feedback:', error);
       toast({
@@ -119,10 +121,10 @@ function PlayerAssessmentPage({ playerId }: { playerId: string }) {
     <main className="flex-1 p-4 md:p-8">
         <div className="max-w-5xl mx-auto">
           <div className="mb-4">
-            <Link href="/coach" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" onClick={onBack} className="flex items-center text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
-            </Link>
+            </Button>
           </div>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-8">
@@ -205,14 +207,5 @@ function PlayerAssessmentPage({ playerId }: { playerId: string }) {
           </div>
         </div>
       </main>
-  );
-}
-
-export default function PlayerReviewPage({ params: { id } }: { params: { id: string } }) {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <AppHeader />
-      <PlayerAssessmentPage playerId={id} />
-    </div>
   );
 }

@@ -1,16 +1,17 @@
 'use client';
 
-import { AppHeader } from '@/components/AppHeader';
-import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { CheckCircle, Clock, Dot, User, MapPin, BarChart2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
-export function CoachDashboard() {
+interface CoachDashboardProps {
+  onSelectPlayer: (playerId: string) => void;
+}
+
+export function CoachDashboard({ onSelectPlayer }: CoachDashboardProps) {
   const firestore = useFirestore();
   
   const playerProfilesCollection = useMemoFirebase(() => {
@@ -70,11 +71,9 @@ export function CoachDashboard() {
                     </div>
                   </CardContent>
                   <div className="p-6 pt-0">
-                    <Link href={`/coach/player/${player.id}`} className="w-full">
-                        <Button className="w-full">
-                            Review Profile
-                        </Button>
-                    </Link>
+                    <Button onClick={() => onSelectPlayer(player.id)} className="w-full">
+                        Review Profile
+                    </Button>
                   </div>
                 </Card>
               ))}

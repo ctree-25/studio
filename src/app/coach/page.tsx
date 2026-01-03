@@ -6,14 +6,16 @@ import { CoachProfileForm } from './CoachProfileForm';
 import Link from 'next/link';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { doc } from 'firebase/firestore';
 import { CoachDashboard } from './CoachDashboard';
+import { PlayerAssessmentPage } from './PlayerAssessmentPage';
 
 
 function CoachProfileLoader() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
     const coachProfileRef = useMemoFirebase(() => {
         if (!user) return null;
@@ -22,8 +24,15 @@ function CoachProfileLoader() {
     const { data: coachProfile, isLoading: isProfileLoading, error: profileError } = useDoc(coachProfileRef);
 
     const handleProfileCreation = () => {
-        // This is a bit of a hack to force a re-fetch of the document.
         window.location.reload();
+    }
+
+    const handleSelectPlayer = (playerId: string) => {
+        setSelectedPlayerId(playerId);
+    }
+
+    const handleReturnToDashboard = () => {
+        setSelectedPlayerId(null);
     }
     
     if (isProfileLoading) {
@@ -43,7 +52,10 @@ function CoachProfileLoader() {
     }
 
     if (coachProfile) {
-        return <CoachDashboard />;
+        if (selectedPlayerId) {
+            return <PlayerAssessmentPage playerId={selectedPlayerId} onBack={handleReturnToDashboard} />;
+        }
+        return <CoachDashboard onSelectPlayer={handleSelectPlayer} />;
     }
 
     return (
