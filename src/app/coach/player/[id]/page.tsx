@@ -1,74 +1,120 @@
 'use client';
 
 import { AppHeader } from '@/components/AppHeader';
-import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useDoc, useFirestore, useUser, setDocumentNonBlocking, addDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
+import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import { useState, use } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const SKILLS = ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'];
 
 export default function PlayerReviewPage({ params }: { params: { id: string } }) {
-  const resolvedParams = use(params);
-  const { getPlayer, updatePlayer } = useAppContext();
-  const player = getPlayer(resolvedParams.id);
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const playerProfileRef = useMemoFirebase(() => {
+    if (!firestore || !params.id) return null;
+    return doc(firestore, 'playerProfiles', params.id);
+  }, [firestore, params.id]);
+
+  const { data: player, isLoading: isPlayerLoading } = useDoc(playerProfileRef);
+
   const [feedback, setFeedback] = useState('');
-  const [skillRatings, setSkillRatings] = useState<Record<string, number>>(() => 
+  const [skillRatings, setSkillRatings] = useState<Record<string, number>>(() =>
     SKILLS.reduce((acc, skill) => ({ ...acc, [skill]: 5 }), {})
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
-  const { toast } = useToast();
+
+
+  const handleSliderChange = (skill: string, value: number[]) => {
+    setSkillRatings(prev => ({ ...prev, [skill]: value[0] }));
+  };
+
+  const handleSubmit = async () => {
+    if (!user || !player) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'You must be logged in and viewing a player to submit feedback.',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    toast({
+      title: 'Submitting Feedback...',
+      description: `Your feedback for ${player.name} is being saved.`,
+    });
+
+    const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\\n');
+    const fullFeedbackText = `Assessment:\\n${feedback}\\n\\nSkill Ratings:\\n${skillRatingsText}`;
+
+    const feedbackData = {
+        coachId: user.uid,
+        playerId: player.id,
+        feedback: fullFeedbackText,
+        date: serverTimestamp(),
+        skillRatings: skillRatings,
+    };
+
+    try {
+      const feedbackCollectionRef = collection(firestore, 'coachFeedback');
+      await addDocumentNonBlocking(feedbackCollectionRef, feedbackData);
+
+      toast({
+        title: 'Feedback Submitted',
+        description: `Your feedback for ${player.name} has been saved.`,
+      });
+      router.push('/coach');
+    } catch (error) {
+      console.error('Failed to submit feedback:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Submission Failed',
+        description: 'There was an error submitting your feedback. Please try again.',
+      });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  if (isPlayerLoading) {
+    return (
+        <div className="flex flex-col min-h-screen">
+            <AppHeader />
+            <main className="flex-1 p-4 md:p-8">
+                <div className="max-w-5xl mx-auto">
+                    <Skeleton className="h-6 w-32 mb-4" />
+                     <div className="grid md:grid-cols-2 gap-8">
+                        <div className="space-y-8">
+                            <Skeleton className="h-56 w-full" />
+                            <Skeleton className="h-72 w-full" />
+                        </div>
+                        <div className="space-y-8">
+                            <Skeleton className="h-96 w-full" />
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
+  }
 
   if (!player) {
     notFound();
   }
-
-  const isDemoPlayer = player.id.startsWith('mock-');
-  const backLink = isDemoPlayer ? '/coach/demo' : '/coach';
-  
-  const handleSliderChange = (skill: string, value: number[]) => {
-    setSkillRatings(prev => ({...prev, [skill]: value[0]}));
-  }
-
-  const handleSubmit = () => {
-    setIsSubmitting(true);
-    
-    const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
-    
-    const timestamp = new Date().toLocaleString();
-    const newFeedback = `Assessment - ${timestamp}\n${feedback}\n\nSkill Ratings:\n${skillRatingsText}`;
-    
-    // In a multi-coach system, this might use '###' to separate reports.
-    const updatedFeedback = player.coachFeedback 
-        ? `${newFeedback}###${player.coachFeedback}`
-        : newFeedback;
-
-    // Simulate API call
-    setTimeout(() => {
-        updatePlayer(player.id, { coachFeedback: updatedFeedback });
-        setIsSubmitting(false);
-        setFeedback('');
-        setSkillRatings(SKILLS.reduce((acc, skill) => ({ ...acc, [skill]: 5 }), {}));
-
-        toast({
-            title: 'Feedback Submitted',
-            description: `Your feedback for ${player.name} has been saved.`
-        });
-        router.push(backLink);
-    }, 1000);
-  }
-
-  // Show just the first feedback entry for the coach's own review
-  const latestAssessment = player.coachFeedback?.split('###').filter(s => s.trim() !== '')[0];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -76,7 +122,7 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
       <main className="flex-1 p-4 md:p-8">
         <div className="max-w-5xl mx-auto">
           <div className="mb-4">
-            <Link href={backLink} className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/coach" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Link>
@@ -85,20 +131,20 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
             <div className="space-y-8">
               <Card>
                 <CardHeader className='flex-row items-center gap-4'>
-                    <Avatar className="h-20 w-20">
-                        <AvatarImage src={player.profilePictureUrl} data-ai-hint="volleyball player"/>
-                        <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <CardTitle className="text-2xl font-headline">{player.name}</CardTitle>
-                        <CardDescription>{player.position}</CardDescription>
-                    </div>
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={player.profilePictureUrl} data-ai-hint="volleyball player" />
+                    <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle className="text-2xl font-headline">{player.name}</CardTitle>
+                    <CardDescription>{player.position}</CardDescription>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center"><Ruler className="w-4 h-4 mr-2 text-muted-foreground"/> Height: {player.height}</div>
-                    <div className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-muted-foreground"/> Grad Year: {player.gradYear}</div>
-                    <div className="flex items-center"><BarChart2 className="w-4 h-4 mr-2 text-muted-foreground"/> Target Level: {player.targetLevel}</div>
-                    <div className="flex items-center"><MapPin className="w-4 h-4 mr-2 text-muted-foreground"/> Target Schools: {player.preferredSchools}</div>
+                  <div className="flex items-center"><Ruler className="w-4 h-4 mr-2 text-muted-foreground" /> Height: {player.height}</div>
+                  <div className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-muted-foreground" /> Grad Year: {player.gradYear}</div>
+                  <div className="flex items-center"><BarChart2 className="w-4 h-4 mr-2 text-muted-foreground" /> Target Level: {player.targetLevel}</div>
+                  <div className="flex items-center"><MapPin className="w-4 h-4 mr-2 text-muted-foreground" /> Target Schools: {player.preferredSchools}</div>
                 </CardContent>
               </Card>
 
@@ -119,64 +165,45 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
             </div>
 
             <div className="space-y-8">
-                <Card>
-                    <CardHeader>
-                    <CardTitle>Your Feedback</CardTitle>
-                    <CardDescription>Provide your assessment for the player. Your feedback will be added to the player's profile without overwriting previous entries.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {latestAssessment && (
-                        <div className="p-4 border rounded-md bg-muted/50 max-h-60 overflow-y-auto space-y-4">
-                            {(() => {
-                                const lines = latestAssessment.split('\n');
-                                const heading = lines[0];
-                                const timestamp = heading.replace(/^(Assessment - |Previous Feedback - )/, '');
-                                const body = lines.slice(1).join('\n');
-                                return (
-                                     <div>
-                                        <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                                            {body}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground/70 mt-2">{timestamp}</p>
-                                     </div>
-                                )
-                            })()}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Feedback</CardTitle>
+                  <CardDescription>Provide your assessment for the player. Your feedback will be saved as a new evaluation.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4 pt-4">
+                    <Textarea
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      placeholder="Provide your constructive feedback here..."
+                      rows={5}
+                      className="resize-y"
+                    />
+                    <div className="space-y-6">
+                      <h4 className="font-semibold">Skill Ratings</h4>
+                      {SKILLS.map(skill => (
+                        <div key={skill} className="grid gap-2">
+                          <div className="flex justify-between items-center">
+                            <Label htmlFor={`slider-${skill}`}>{skill}</Label>
+                            <span className="text-sm font-medium text-primary w-8 text-center">{skillRatings[skill]}</span>
+                          </div>
+                          <Slider
+                            id={`slider-${skill}`}
+                            min={1}
+                            max={10}
+                            step={1}
+                            value={[skillRatings[skill]]}
+                            onValueChange={(value) => handleSliderChange(skill, value)}
+                          />
                         </div>
-                      )}
-                      
-                      <div className="space-y-4 pt-4">
-                        <Textarea 
-                            value={feedback}
-                            onChange={(e) => setFeedback(e.target.value)}
-                            placeholder="Provide your constructive feedback here..." 
-                            rows={5}
-                            className="resize-y"
-                        />
-                        <div className="space-y-6">
-                            <h4 className="font-semibold">Skill Ratings</h4>
-                            {SKILLS.map(skill => (
-                                <div key={skill} className="grid gap-2">
-                                    <div className="flex justify-between items-center">
-                                        <Label htmlFor={`slider-${skill}`}>{skill}</Label>
-                                        <span className="text-sm font-medium text-primary w-8 text-center">{skillRatings[skill]}</span>
-                                    </div>
-                                    <Slider
-                                        id={`slider-${skill}`}
-                                        min={1}
-                                        max={10}
-                                        step={1}
-                                        value={[skillRatings[skill]]}
-                                        onValueChange={(value) => handleSliderChange(skill, value)}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                        <Button onClick={handleSubmit} disabled={isSubmitting || !feedback} className="w-full">
-                            {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                </Card>
+                      ))}
+                    </div>
+                    <Button onClick={handleSubmit} disabled={isSubmitting || !feedback} className="w-full">
+                      {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
