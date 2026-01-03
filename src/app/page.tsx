@@ -22,7 +22,13 @@ export default function Home() {
       localStorage.setItem('userRole', provider);
       await signInWithPopup(auth, googleProvider);
       // The AuthRedirect component will handle redirection on successful login.
-    } catch (error) {
+    } catch (error: any) {
+      // Don't show an error if the user closes the popup
+      if (error.code === 'auth/popup-closed-by-user') {
+        localStorage.removeItem('userRole');
+        return;
+      }
+      
       console.error("Google Sign-In Error:", error);
       toast({
         variant: "destructive",
