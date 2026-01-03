@@ -48,9 +48,14 @@ export function CoachProfileForm({ onProfileCreate }: { onProfileCreate: () => v
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
+        experience: '',
+        levelOfCoaching: undefined,
         affiliation: '',
-        profileLink: '',
+        email: user?.email || '',
+        phone: '',
         placedPlayerLevels: [],
+        profileLink: '',
+        profilesPerWeek: ''
     }
   });
 
@@ -73,9 +78,7 @@ export function CoachProfileForm({ onProfileCreate }: { onProfileCreate: () => v
     try {
       const coachProfileData = {
         userId: user.uid,
-        firstName: user.displayName?.split(' ')[0] || '',
-        lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
-        email: user.email,
+        name: user.displayName,
         ...data
       };
 
@@ -287,7 +290,7 @@ export function CoachProfileForm({ onProfileCreate }: { onProfileCreate: () => v
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a range" />
-                            </SelectTrigger>
+                            </Trigger>
                             </FormControl>
                             <SelectContent>
                             <SelectItem value="1-5">1-5</SelectItem>
