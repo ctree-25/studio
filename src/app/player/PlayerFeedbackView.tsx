@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PlayerOverallScore } from "@/components/PlayerOverallScore";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { collection, query, where, collectionGroup, getDocs } from "firebase/firestore";
 
 const extractAverageSkillData = (assessments: Assessment[]) => {
     if (!assessments || assessments.length === 0) return [];
@@ -82,19 +82,36 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
     const [replies, setReplies] = useState<Record<number, string>>({});
     const { toast } = useToast();
     const [liveAssessments, setLiveAssessments] = useState<Assessment[]>([]);
-
-    const assessmentsQuery = useMemoFirebase(() => {
-        if (!firestore || !player || isDemo) return null;
-        return query(collection(firestore, 'assessments'), where('playerId', '==', player.id));
-    }, [firestore, player, isDemo]);
-
-    const { data: fetchedAssessments, isLoading: isLoadingAssessments } = useCollection<Assessment>(assessmentsQuery);
+    const [isLoadingAssessments, setIsLoadingAssessments] = useState(!isDemo);
 
     useEffect(() => {
-        if (fetchedAssessments) {
-            setLiveAssessments(fetchedAssessments as Assessment[]);
-        }
-    }, [fetchedAssessments]);
+        if (isDemo || !firestore || !player) return;
+
+        const fetchAssessments = async () => {
+            setIsLoadingAssessments(true);
+            const assessmentsQuery = query(
+                collectionGroup(firestore, 'assessments'),
+                where('playerId', '==', player.id)
+            );
+
+            try {
+                const querySnapshot = await getDocs(assessmentsQuery);
+                const assessments = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Assessment));
+                setLiveAssessments(assessments);
+            } catch (error) {
+                console.error("Error fetching assessments:", error);
+                toast({
+                    variant: 'destructive',
+                    title: "Could not load feedback",
+                    description: "There was an issue fetching the latest coach assessments."
+                })
+            } finally {
+                setIsLoadingAssessments(false);
+            }
+        };
+
+        fetchAssessments();
+    }, [firestore, player, isDemo, toast]);
     
     // For the demo view, we pull the mock player from the context which has assessments.
     const demoPlayer = isDemo ? getPlayer('mock-player-2') : null;
@@ -354,3 +371,5 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
         </Tabs>
     );
 }
+
+    

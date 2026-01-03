@@ -94,7 +94,7 @@
       "required": [
         "coachId",
         "playerId",
-"feedbackText",
+        "feedbackText",
         "skillRatings",
         "timestamp"
       ]
@@ -243,25 +243,33 @@
               "description": "The unique identifier for the coach."
             }
           ]
-        }
-      },
-      {
-        "path": "/assessments/{assessmentId}",
-        "definition": {
-          "entityName": "Assessment",
-          "schema": {
-            "$ref": "#/backend/entities/Assessment"
-          },
-          "description": "Stores individual assessments from coaches for players. This collection serves as the source of truth for all feedback.",
-          "params": [
-            {
-              "name": "assessmentId",
-              "description": "The unique identifier for the assessment."
+        },
+        "subcollections": [
+          {
+            "path": "/coaches/{coachId}/assessments/{assessmentId}",
+            "definition": {
+              "entityName": "Assessment",
+              "schema": {
+                "$ref": "#/backend/entities/Assessment"
+              },
+              "description": "Stores individual assessments from a coach for a specific player.",
+              "params": [
+                {
+                  "name": "coachId",
+                  "description": "The unique identifier for the coach."
+                },
+                {
+                  "name": "assessmentId",
+                  "description": "The unique identifier for the assessment."
+                }
+              ]
             }
-          ]
-        }
+          }
+        ]
       }
     ],
-    "reasoning": "The Firestore structure is designed to provide secure and efficient data access for the CourtConnect application, focusing on player profiles and coach feedback. The key principle is Authorization Independence, achieved through denormalization. This eliminates the need for `get()` calls in security rules, ensuring atomic operations and easier debugging.\n\nThe structure includes:\n\n*   `/users/{userId}`: Stores user information, including roles. This collection enables role-based access control.\n*   `/playerProfiles/{playerProfileId}`: Stores player profile data. The `userId` field is denormalized to enable simple security rules that check if `request.auth.uid == resource.data.userId`.\n*   `/coaches/{coachId}`: Stores coach information, including a reference to their user ID.\n*   `/assessments/{assessmentId}`: A new collection to store individual feedback from coaches. This approach simplifies security rules, as coaches only need permission to create documents in this collection. Players can then query this collection for feedback related to their `userId`.\n\n**Authorization Independence (Denormalization):**\n\n*   The `playerProfiles` collection includes the `userId` field, allowing security rules to validate ownership without extra reads.\n*   The `assessments` collection uses `coachId` and `playerId` fields to manage read permissions effectively.\n\n**QAPs (Rules are not Filters):**\n\n*   Segregating data into distinct collections allows for simplified security rules. List operations on `/assessments` can be secured by querying against the `playerId` or `coachId`, which is enforced by client-side code and backed by security rules on read operations.\n\n**Other Considerations:**\n\n*   The structure facilitates role-based access control (DBAC) by storing roles within the `/users/{userId}` document."
+    "reasoning": "The Firestore structure is designed to provide secure and efficient data access for the CourtConnect application. The key principle is Authorization Independence, achieved through denormalization and logical data separation.\n\nThe structure includes:\n\n*   `/users/{userId}`: Stores user information, including roles. This collection enables role-based access control.\n*   `/playerProfiles/{playerProfileId}`: Stores public player profile data.\n*   `/coaches/{coachId}`: Stores public coach information. This now contains a sub-collection for assessments.\n*   `/coaches/{coachId}/assessments/{assessmentId}`: A sub-collection to store private feedback from a specific coach. This model simplifies security rules immensely, as a coach only needs permission to write to their own document's sub-collections.\n\n**Data Segregation:**\n\n*   By moving assessments into a sub-collection under `/coaches`, we create a clear ownership model. The security rules become much simpler: a coach can write to `coaches/{their_uid}/assessments`, and a player can read from any assessment document where their `playerId` matches."
   }
 }
+
+    

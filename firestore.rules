@@ -6,19 +6,14 @@
  * This ruleset enforces a strict user-ownership and role-based model. Users have full control over their own data (like their profile), while interactions between different user types (like a coach giving feedback to a player) are governed by specific authorization checks. The primary goal is to ensure data privacy and integrity while allowing for public discovery of profiles.
  *
  * ## Data Structure
- * The data is organized into four top-level collections: `/users`, `/playerProfiles`, `/coaches`, and `/assessments`. This flat structure simplifies rules by avoiding complex path traversals.
+ * The data is organized into three top-level collections: `/users`, `/playerProfiles`, and `/coaches`. The `/coaches` collection contains an `assessments` sub-collection. This structure simplifies rules by tying assessment data directly to the coach who created it.
  *
  * ## Key Security Decisions
  * - **Profile Visibility**: Player and Coach profiles (`/playerProfiles`, `/coaches`) are publicly readable to allow for discovery within the app. However, write access is strictly limited to the profile owner.
- * - **Assessment Creation**: Only authenticated coaches can create new assessments.
+ * - **Assessment Creation**: Only the owning coach can create an assessment in their own sub-collection.
  * - **Assessment Visibility**: An assessment can only be read by the player it belongs to, or the coach who wrote it.
  * - **Default Deny**: Any access not explicitly granted by these rules is denied.
  *
- * ## Denormalization for Authorization
- * To create simpler and more performant rules, this ruleset relies on denormalized data. For example, the `/playerProfiles/{profileId}` document contains a `userId` field, allowing rules to verify ownership directly (`resource.data.userId == request.auth.uid`) without performing a costly `get()`.
- *
- * ## Structural Segregation
- * Data is logically separated into distinct top-level collections based on its purpose and access patterns (e.g., public profiles vs. private data). This is more secure and performant than mixing public and private data in a single collection.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -50,8 +45,6 @@ service cloud.firestore {
      * This is a critical function for role-based access control.
      */
     function isCoach() {
-      // Use exists() to check for the document before accessing its data.
-      // This is more secure and prevents errors if the document doesn't exist.
       return isSignedIn() &&
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach';
@@ -91,32 +84,33 @@ service cloud.firestore {
     /**
      * @description Coach profiles are public for anyone to view but can only
      *   be created, updated, or deleted by the coach who owns the profile.
+     *   This collection now contains a sub-collection for assessments.
      * @path /coaches/{coachId}
      */
     match /coaches/{coachId} {
       allow get, list: if true;
       allow create, update, delete: if isCoach() && isOwner(request.resource.data.userId);
-    }
 
-    /**
-     * @description Stores individual assessments from coaches.
-     * @path /assessments/{assessmentId}
-     */
-    match /assessments/{assessmentId} {
-        // Only an authenticated coach can create an assessment.
-        // The coachId in the document must match their own UID.
-        allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
-
-        // An assessment can be read by the player it belongs to, or the coach who wrote it.
-        allow get: if isSignedIn() &&
-            (request.auth.uid == resource.data.playerId || request.auth.uid == resource.data.coachId);
+      /**
+       * @description Stores individual assessments from a coach.
+       * @path /coaches/{coachId}/assessments/{assessmentId}
+       */
+      match /assessments/{assessmentId} {
+        // A coach can only create an assessment under their own profile.
+        allow create: if isCoach() && isOwner(coachId) && request.resource.data.coachId == coachId;
         
-        // A player or coach can list only their own assessments.
-        // This is enforced by client-side queries and backed by the `get` rule.
+        // An assessment can be read by the player it belongs to, or the coach who wrote it.
+        allow get: if isSignedIn() && (request.auth.uid == resource.data.playerId || isOwner(coachId));
+
+        // Players can list assessments where they are the playerId. This is enforced by client-side queries.
+        // Coaches can list assessments they've written.
         allow list: if isSignedIn();
 
-        // Updates and deletes are disallowed to maintain a clear audit trail.
+        // Updates and deletes are disallowed to maintain an audit trail.
         allow update, delete: if false;
+      }
     }
   }
 }
+
+    

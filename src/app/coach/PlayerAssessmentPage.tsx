@@ -47,12 +47,6 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
     return doc(firestore, 'playerProfiles', playerId);
   }, [firestore, playerId, isLive]);
   
-  const assessmentsRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'assessments');
-    }, [firestore]);
-
-
   const { data: livePlayer, isLoading: isPlayerLoading } = useDoc(playerProfileRef);
   
   const demoPlayer = isDemo ? getPlayer(playerId) : null;
@@ -85,7 +79,7 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
         return;
     }
 
-    if (!user || !player || !assessmentsRef) {
+    if (!user || !player || !firestore) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -93,6 +87,8 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
       });
       return;
     }
+
+    const assessmentsRef = collection(firestore, 'coaches', user.uid, 'assessments');
 
     setIsSubmitting(true);
     toast({
@@ -109,7 +105,7 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
     };
 
     try {
-        await addDocumentNonBlocking(assessmentsRef, newAssessment);
+        addDocumentNonBlocking(assessmentsRef, newAssessment);
 
         toast({
             title: 'Feedback Submitted',
@@ -260,3 +256,5 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
       </main>
   );
 }
+
+    
