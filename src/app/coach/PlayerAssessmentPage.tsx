@@ -33,6 +33,21 @@ interface PlayerAssessmentPageProps {
     isDemo?: boolean;
 }
 
+const getYouTubeEmbedUrl = (url: string) => {
+    if (!url) return null;
+    try {
+      const urlObj = new URL(url);
+      let videoId = urlObj.searchParams.get('v');
+      if (urlObj.hostname === 'youtu.be') {
+        videoId = urlObj.pathname.slice(1);
+      }
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    } catch (error) {
+      console.error('Invalid URL for YouTube embed:', error);
+      return null;
+    }
+};
+
 export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: PlayerAssessmentPageProps) {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -57,6 +72,8 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const positionSkills = (player?.position && SKILLS_BY_POSITION[player.position]) || SKILLS_BY_POSITION['Default'];
+  
+  const embedUrl = player?.highlightVideoUrl ? getYouTubeEmbedUrl(player.highlightVideoUrl) : null;
   
   useEffect(() => {
     if (player) {
@@ -189,23 +206,34 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
                 </CardContent>
               </Card>
 
-              {player.highlightVideoUrl && (
+              {embedUrl ? (
                 <Card>
                   <CardHeader>
                     <CardTitle>Highlight Footage</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <video
-                      key={player.highlightVideoUrl}
-                      controls
-                      src={player.highlightVideoUrl}
-                      className="w-full rounded-lg"
-                    >
-                      Your browser does not support the video tag.
-                    </video>
+                    <div className="aspect-video">
+                        <iframe
+                            key={embedUrl}
+                            src={embedUrl}
+                            title="Player Highlight Video"
+                            className="w-full h-full rounded-lg"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
+                    </div>
                   </CardContent>
                 </Card>
-              )}
+              ) : player.highlightVideoUrl ? (
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Highlight Footage</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Could not load video. The provided link may be invalid.</p>
+                    </CardContent>
+                 </Card>
+              ) : null}
             </div>
 
             <div className="space-y-8">
