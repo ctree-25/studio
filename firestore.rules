@@ -83,21 +83,26 @@ service cloud.firestore {
 
     /**
      * @description Coach profiles are public for anyone to view but can only
-     *   be created, updated, or deleted by the coach who owns the profile.
-     *   This collection now contains a sub-collection for assessments.
+     *   be created or updated by the coach who owns the profile.
+     *   This collection also contains a sub-collection for assessments.
      * @path /coaches/{coachId}
      */
     match /coaches/{coachId} {
       allow get, list: if true;
-      allow create, update, delete: if isCoach() && isOwner(request.resource.data.userId);
+      // This rule only applies to the coach document itself.
+      // A coach can create their own profile document.
+      allow create: if isCoach() && isOwner(coachId) && request.resource.data.userId == coachId;
+      // A coach can update their own profile document.
+      allow update, delete: if isCoach() && isOwner(coachId);
 
       /**
        * @description Stores individual assessments from a coach.
+       *   Permissions for this sub-collection are not inherited from the parent.
        * @path /coaches/{coachId}/assessments/{assessmentId}
        */
       match /assessments/{assessmentId} {
         // A coach can only create an assessment under their own profile.
-        allow create: if isOwner(coachId) && request.resource.data.coachId == coachId;
+        allow create: if isCoach() && isOwner(coachId) && request.resource.data.coachId == coachId;
         
         // An assessment can be read by the player it belongs to, or the coach who wrote it.
         allow get: if isSignedIn() && (request.auth.uid == resource.data.playerId || isOwner(coachId));
