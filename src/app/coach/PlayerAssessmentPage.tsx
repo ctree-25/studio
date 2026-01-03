@@ -243,7 +243,7 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
                         </div>
                       ))}
                     </div>
-                    <Button onClick={handleSubmit} disabled={isSubmitting || !feedback || isDemo} className="w-full">
+                    <Button onClick={handleSubmit} disabled={true} className="w-full">
                       {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                     </Button>
                   </div>
