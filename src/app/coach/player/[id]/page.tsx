@@ -3,8 +3,8 @@
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useDoc, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
 import { doc } from 'firebase/firestore';
@@ -72,7 +72,7 @@ function PlayerAssessmentPage({ playerId }: { playerId: string }) {
 
     try {
       const feedbackCollectionRef = collection(firestore, 'coachFeedback');
-      await addDoc(feedbackCollectionRef, feedbackData);
+      addDocumentNonBlocking(feedbackCollectionRef, feedbackData);
 
       toast({
         title: 'Feedback Submitted',
@@ -207,7 +207,8 @@ function PlayerAssessmentPage({ playerId }: { playerId: string }) {
   );
 }
 
-export default function PlayerReviewPage({ params: { id } }: { params: { id: string } }) {
+export default function PlayerReviewPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   return (
     <div className="flex flex-col min-h-screen">
       <AppHeader />
