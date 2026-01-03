@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useAppContext } from "@/context/AppContext";
@@ -196,7 +197,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                          </>
                     ): (
                         <div className="text-center text-muted-foreground py-8">
-                            <p>Pending feedback</p>
+                            <p>Coaches' feedback pending</p>
                         </div>
                     )}
                   </div>
