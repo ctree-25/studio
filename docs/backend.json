@@ -169,9 +169,9 @@
       "type": "object",
       "description": "Represents a user of the application. Note: Authentication information (e.g., password) is not stored here.",
       "properties": {
-        "id": {
+        "uid": {
           "type": "string",
-          "description": "Unique identifier for the user."
+          "description": "Unique identifier for the user, from Firebase Auth."
         },
         "email": {
           "type": "string",
@@ -184,7 +184,7 @@
         }
       },
       "required": [
-        "id",
+        "uid",
         "email",
         "role"
       ]

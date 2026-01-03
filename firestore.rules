@@ -85,7 +85,11 @@ service cloud.firestore {
      * Checks if a coach is only updating the 'coachFeedback' field of a player profile.
      */
     function isUpdatingCoachFeedback() {
-      return isCoach() && request.resource.data.keys().hasOnly(['coachFeedback']);
+      // A coach can only update the coachFeedback field.
+      // And they cannot remove existing feedback, only add to it.
+      return isCoach() 
+        && request.resource.data.keys().hasOnly(['coachFeedback'])
+        && request.resource.data.coachFeedback.size() > resource.data.coachFeedback.size();
     }
 
     // ----------------------------------------------------------------------
@@ -103,8 +107,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false; // User privacy: explicitly disallow listing all users.
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      // Allow create/update for the user themselves, to set their role on first login.
+      allow create, update: if isOwner(userId); 
       allow delete: if isOwner(userId);
     }
 
@@ -121,7 +125,8 @@ service cloud.firestore {
       allow get: if true;
       allow list: if true;
       allow create: if isOwner(playerProfileId) && request.resource.data.userId == request.auth.uid;
-      allow update: if (isOwner(request.resource.data.userId) || isUpdatingCoachFeedback());
+      // An update is allowed if the user owns the profile, OR a coach is adding feedback.
+      allow update: if isOwner(request.resource.data.userId) || isUpdatingCoachFeedback();
       allow delete: if isExistingOwner(playerProfileId);
     }
 
