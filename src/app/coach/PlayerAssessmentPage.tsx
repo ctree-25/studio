@@ -211,10 +211,13 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
                   </CardHeader>
                   <CardContent>
                     <video
+                      key={player.highlightVideoUrl}
                       controls
                       src={player.highlightVideoUrl}
                       className="w-full rounded-lg"
-                    />
+                    >
+                      Your browser does not support the video tag.
+                    </video>
                   </CardContent>
                 </Card>
               )}
