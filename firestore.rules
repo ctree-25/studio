@@ -6,11 +6,11 @@
  * This ruleset enforces a strict user-ownership and role-based model. Users have full control over their own data (like their profile), while interactions between different user types (like a coach giving feedback to a player) are governed by specific authorization checks. The primary goal is to ensure data privacy and integrity while allowing for public discovery of profiles.
  *
  * ## Data Structure
- * The data is organized into three top-level collections: `/users`, `/playerProfiles`, and `/coaches`. The `/coaches` collection contains an `assessments` sub-collection. This structure simplifies rules by tying assessment data directly to the coach who created it.
+ * The data is organized into four top-level collections: `/users`, `/playerProfiles`, `/coaches`, and `/assessments`. This structure simplifies rules by tying data directly to its ownership and access context.
  *
  * ## Key Security Decisions
  * - **Profile Visibility**: Player and Coach profiles (`/playerProfiles`, `/coaches`) are publicly readable to allow for discovery within the app. However, write access is strictly limited to the profile owner.
- * - **Assessment Creation**: Only the owning coach can create an assessment in their own sub-collection.
+ * - **Assessment Creation**: Only a verified coach can create an assessment document. The document must correctly list their own UID as the coachId.
  * - **Assessment Visibility**: An assessment can only be read by the player it belongs to, or the coach who wrote it.
  * - **Default Deny**: Any access not explicitly granted by these rules is denied.
  *
@@ -84,36 +84,30 @@ service cloud.firestore {
     /**
      * @description Coach profiles are public for anyone to view but can only
      *   be created or updated by the coach who owns the profile.
-     *   This collection also contains a sub-collection for assessments.
      * @path /coaches/{coachId}
      */
     match /coaches/{coachId} {
       allow get, list: if true;
-      // This rule only applies to the coach document itself.
-      // A coach can create their own profile document.
-      allow create: if isCoach() && isOwner(coachId) && request.resource.data.userId == coachId;
-      // A coach can update their own profile document.
-      allow update, delete: if isCoach() && isOwner(coachId);
+      allow create: if isCoach() && isOwner(request.resource.data.userId);
+      allow update, delete: if isCoach() && isOwner(resource.data.userId);
+    }
 
-      /**
-       * @description Stores individual assessments from a coach.
-       *   Permissions for this sub-collection are not inherited from the parent.
-       * @path /coaches/{coachId}/assessments/{assessmentId}
-       */
-      match /assessments/{assessmentId} {
-        // A coach can only create an assessment under their own profile.
-        allow create: if isCoach() && isOwner(coachId) && request.resource.data.coachId == coachId;
-        
-        // An assessment can be read by the player it belongs to, or the coach who wrote it.
-        allow get: if isSignedIn() && (request.auth.uid == resource.data.playerId || isOwner(coachId));
+    /**
+     * @description Stores individual assessments.
+     * @path /assessments/{assessmentId}
+     */
+    match /assessments/{assessmentId} {
+      // A coach can only create an assessment and must be the author.
+      allow create: if isCoach() && request.auth.uid == request.resource.data.coachId;
+      
+      // An assessment can be read by the player it belongs to, or the coach who wrote it.
+      allow get: if isSignedIn() && (request.auth.uid == resource.data.playerId || request.auth.uid == resource.data.coachId);
 
-        // Players can list assessments where they are the playerId. This is enforced by client-side queries.
-        // Coaches can list assessments they've written.
-        allow list: if isSignedIn();
+      // Allow players/coaches to list only the assessments relevant to them. This is enforced by client-side queries.
+      allow list: if isSignedIn();
 
-        // Updates and deletes are disallowed to maintain an audit trail.
-        allow update, delete: if false;
-      }
+      // Updates and deletes are disallowed to maintain an audit trail.
+      allow update, delete: if false;
     }
   }
 }

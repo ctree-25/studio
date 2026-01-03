@@ -88,7 +88,7 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
       return;
     }
 
-    const assessmentsRef = collection(firestore, 'coaches', user.uid, 'assessments');
+    const assessmentsRef = collection(firestore, 'assessments');
 
     setIsSubmitting(true);
     toast({
@@ -256,5 +256,3 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
       </main>
   );
 }
-
-    
