@@ -5,16 +5,24 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { AuthRedirect } from '@/components/AuthRedirect';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const auth = useAuth();
+  const { user } = useUser();
+  const router = useRouter();
   const { toast } = useToast();
 
   const handleSignIn = async (provider: 'player' | 'coach') => {
+    if (user) {
+      router.push(`/${provider}`);
+      return;
+    }
+
     if (!auth) return;
     const googleProvider = new GoogleAuthProvider();
     try {
