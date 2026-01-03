@@ -1,16 +1,25 @@
+
 'use client';
 
 import { AppHeader } from '@/components/AppHeader';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { CheckCircle, Clock, Dot, User, MapPin, BarChart2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CoachDemoDashboard() {
   const { players } = useAppContext();
   const submittedPlayers = players.filter(p => p.submitted);
+  const { toast } = useToast();
+
+  const handleReviewClick = () => {
+    toast({
+      title: "Demo Action",
+      description: "In the live app, this would open the player's assessment view.",
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -59,11 +68,9 @@ export default function CoachDemoDashboard() {
                     </div>
                   </CardContent>
                   <div className="p-6 pt-0">
-                    <Link href={`/coach/player/${player.id}`} className="w-full">
-                        <Button className="w-full">
-                            Review Profile
-                        </Button>
-                    </Link>
+                    <Button className="w-full" onClick={handleReviewClick}>
+                        Review Profile
+                    </Button>
                   </div>
                 </Card>
               ))}
