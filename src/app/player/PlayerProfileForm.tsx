@@ -122,21 +122,23 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
     setIsLoading(true);
     toast({
       title: 'Processing Profile...',
-      description: 'Your profile is being created. This may take a moment.',
+      description: 'Your profile is being submitted.',
     });
 
     try {
         const { profilePicture, ...playerData } = data;
         const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
         
-        const optimisticProfileData = {
+        // 1. Save the text data first (without the picture URL)
+        const profileDataToSave = {
             ...playerData,
             userId: user.uid,
-            profilePictureUrl: avatarPreview || playerAvatar?.imageUrl || '',
             submitted: true,
         };
-        setDocumentNonBlocking(playerProfileRef, optimisticProfileData, { merge: true });
+        setDocumentNonBlocking(playerProfileRef, profileDataToSave, { merge: true });
 
+
+        // 2. If there is a new picture, upload it and update the URL in a separate step
         if (profilePicture instanceof File) {
             const resizedImage = await resizeImage(profilePicture, 400, 400);
 
@@ -145,6 +147,7 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
             
             uploadBytes(storageRef, resizedImage).then(uploadResult => {
                 getDownloadURL(uploadResult.ref).then(pictureUrl => {
+                    // 3. Update the document with the new picture URL
                     setDocumentNonBlocking(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
                 }).catch(error => {
                      console.error('Failed to get download URL:', error);
