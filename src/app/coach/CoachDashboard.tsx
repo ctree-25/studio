@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, Clock, Dot, User, MapPin, BarChart2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CoachDashboardProps {
   onSelectPlayer: (playerId: string) => void;
@@ -15,13 +16,12 @@ interface CoachDashboardProps {
 export function CoachDashboard({ onSelectPlayer }: CoachDashboardProps) {
   const firestore = useFirestore();
   
-  const playerProfilesCollection = useMemoFirebase(() => {
+  const playerProfilesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'playerProfiles');
+    return query(collection(firestore, 'playerProfiles'), where('submitted', '==', true));
   }, [firestore]);
 
-  const { data: players, isLoading } = useCollection(playerProfilesCollection);
-  const submittedPlayers = players?.filter(p => p.submitted) || [];
+  const { data: players, isLoading } = useCollection(playerProfilesQuery);
 
   return (
       <main className="flex-1 p-4 md:p-8">
@@ -32,10 +32,29 @@ export function CoachDashboard({ onSelectPlayer }: CoachDashboardProps) {
           </div>
 
           {isLoading ? (
-            <div className="text-center py-16">
-                <p>Loading player profiles...</p>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(3)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader>
+                            <div className="flex items-center gap-4">
+                                <Skeleton className="h-16 w-16 rounded-full" />
+                                <div className="flex-1 space-y-2">
+                                    <Skeleton className="h-4 w-3/4" />
+                                    <Skeleton className="h-4 w-1/2" />
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-full" />
+                        </CardContent>
+                        <div className="p-6 pt-0">
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </Card>
+                ))}
             </div>
-          ) : submittedPlayers.length === 0 ? (
+          ) : !players || players.length === 0 ? (
             <div className="text-center py-16 border-2 border-dashed rounded-lg">
                 <User className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-2 text-sm font-semibold">No player profiles submitted</h3>
@@ -43,7 +62,7 @@ export function CoachDashboard({ onSelectPlayer }: CoachDashboardProps) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {submittedPlayers.map((player) => (
+              {players.map((player) => (
                 <Card key={player.id} className="flex flex-col">
                   <CardHeader>
                     <div className="flex items-center gap-4">
