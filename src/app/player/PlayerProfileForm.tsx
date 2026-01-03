@@ -13,7 +13,7 @@ import { analyzePlayerFootage } from '@/ai/flows/analyze-player-footage';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, Link as LinkIcon } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -43,7 +43,7 @@ interface PlayerProfileFormProps {
 export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: PlayerProfileFormProps) {
   const { addPlayer, updatePlayer } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(player?.profilePictureUrl || playerAvatar?.imageUrl || '');
+  const [avatarPreview, setAvatarPreview] = useState(player?.profilePictureUrl || playerAvatar?.imageUrl);
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -113,7 +113,7 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
       }
 
       form.reset();
-      setAvatarPreview(playerAvatar?.imageUrl || '');
+      setAvatarPreview(playerAvatar?.imageUrl);
     } catch (error) {
       console.error('Failed to process profile:', error);
       toast({
