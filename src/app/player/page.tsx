@@ -4,13 +4,20 @@ import { AppHeader } from '@/components/AppHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlayerProfileForm } from './PlayerProfileForm';
 import Link from 'next/link';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { doc } from 'firebase/firestore';
+import { PlayerDashboard } from './PlayerDashboard';
+
 
 export default function PlayerPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
+    const firestore = useFirestore();
+
+    const playerProfileRef = user ? doc(firestore, 'playerProfiles', user.uid) : null;
+    const { data: playerProfile, isLoading: isProfileLoading, error: profileError } = useDoc(playerProfileRef);
 
     useEffect(() => {
         if (!isUserLoading && !user) {
@@ -18,12 +25,30 @@ export default function PlayerPage() {
         }
     }, [user, isUserLoading, router]);
 
-    if (isUserLoading || !user) {
+    const handleProfileCreation = () => {
+        // This is a bit of a hack to force a re-fetch of the document.
+        // In a more robust app, you might use a state management library to trigger this.
+        window.location.reload();
+    }
+
+    if (isUserLoading || isProfileLoading || !user) {
         return (
             <div className="flex flex-col min-h-screen items-center justify-center">
                 <p>Loading...</p>
             </div>
         );
+    }
+
+    if (profileError) {
+        return (
+            <div className="flex flex-col min-h-screen items-center justify-center">
+                <p>Error loading profile. Please try again later.</p>
+            </div>
+        )
+    }
+
+    if (playerProfile) {
+        return <PlayerDashboard player={playerProfile as any} />;
     }
 
     return (
@@ -39,7 +64,7 @@ export default function PlayerPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <PlayerProfileForm />
+                            <PlayerProfileForm onProfileCreate={handleProfileCreation} />
                         </CardContent>
                     </Card>
                 </div>

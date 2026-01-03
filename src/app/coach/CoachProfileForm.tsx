@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Link as LinkIcon } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 const profileFormSchema = z.object({
   experience: z.string({ required_error: 'Please select your years of experience.' }),
@@ -37,9 +39,11 @@ const placedPlayerLevelOptions = [
     { id: 'none', label: 'None' },
 ];
 
-export function CoachProfileForm() {
+export function CoachProfileForm({ onProfileCreate }: { onProfileCreate: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -51,6 +55,15 @@ export function CoachProfileForm() {
   });
 
   async function onSubmit(data: ProfileFormValues) {
+    if (!user) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'You must be logged in to create a profile.',
+        });
+        return;
+      }
+
     setIsLoading(true);
     toast({
       title: 'Creating Profile...',
@@ -58,14 +71,22 @@ export function CoachProfileForm() {
     });
 
     try {
-      // Simulate API call to create coach profile
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Coach Profile Data:', data);
+      const coachProfileData = {
+        userId: user.uid,
+        firstName: user.displayName?.split(' ')[0] || '',
+        lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+        email: user.email,
+        ...data
+      };
+
+      const coachProfileRef = doc(firestore, 'coachProfiles', user.uid);
+      setDocumentNonBlocking(coachProfileRef, coachProfileData, { merge: false });
 
       toast({
         title: 'Profile Created!',
         description: 'Welcome! You can now start reviewing player profiles.',
       });
+      onProfileCreate();
       form.reset();
     } catch (error) {
       console.error('Failed to create coach profile:', error);

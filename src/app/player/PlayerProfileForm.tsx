@@ -15,6 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, Link as LinkIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
 
 const playerAvatar = PlaceHolderImages.find((p) => p.id === 'player-avatar');
 
@@ -34,18 +37,21 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 interface PlayerProfileFormProps {
   player?: PlayerProfile;
   isDemo?: boolean;
+  onProfileCreate?: () => void;
 }
 
-export function PlayerProfileForm({ player, isDemo = false }: PlayerProfileFormProps) {
+export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: PlayerProfileFormProps) {
   const { addPlayer, updatePlayer } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(player?.profilePictureUrl || playerAvatar?.imageUrl || '');
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      name: player?.name || '',
+      name: player?.name || user?.displayName || '',
       position: player?.position || '',
       height: player?.height || '',
       gradYear: player?.gradYear || '',
@@ -64,45 +70,48 @@ export function PlayerProfileForm({ player, isDemo = false }: PlayerProfileFormP
     });
 
   async function onSubmit(data: ProfileFormValues) {
-    if (isDemo) return;
+    if (isDemo || !user) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'You must be logged in to create a profile.',
+        });
+        return;
+    }
 
     setIsLoading(true);
     toast({
       title: 'Processing Profile...',
-      description: 'Your profile is being created and footage is being analyzed. This may take a moment.',
+      description: 'Your profile is being created. This may take a moment.',
     });
 
     try {
-      const placeholderVideoDataUri = 'data:video/mp4;base64,';
+        const { profilePicture, ...playerData } = data;
+        
+        let pictureObjectUrl = player?.profilePictureUrl || playerAvatar?.imageUrl || '';
+        if(profilePicture instanceof File) {
+            pictureObjectUrl = URL.createObjectURL(profilePicture);
+        }
 
-      const { profilePicture, ...playerData } = data;
-      const newPlayer = addPlayer(playerData);
-      
-      let pictureObjectUrl = playerAvatar?.imageUrl || '';
-      if(profilePicture instanceof File) {
-        pictureObjectUrl = URL.createObjectURL(profilePicture);
-      }
+        const playerProfileData = {
+            ...playerData,
+            userId: user.uid,
+            profilePictureUrl: pictureObjectUrl,
+            submitted: true,
+        };
 
-      updatePlayer(newPlayer.id, { 
-        profilePictureUrl: pictureObjectUrl,
-        videoDataUri: placeholderVideoDataUri
-      });
-      
-      const analysisResult = await analyzePlayerFootage({
-        videoDataUri: placeholderVideoDataUri,
-        targetLevel: data.targetLevel,
-        preferredSchools: data.preferredSchools,
-      });
-
-      updatePlayer(newPlayer.id, {
-        aiAnalysis: analysisResult,
-        submitted: true,
-      });
+        const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
+        setDocumentNonBlocking(playerProfileRef, playerProfileData, { merge: false });
 
       toast({
         title: 'Profile Submitted!',
-        description: 'Your profile and AI analysis are now available for coaches to review.',
+        description: 'Your profile is now available for coaches to review.',
       });
+
+      if (onProfileCreate) {
+        onProfileCreate();
+      }
+
       form.reset();
       setAvatarPreview(playerAvatar?.imageUrl || '');
     } catch (error) {
@@ -271,7 +280,7 @@ export function PlayerProfileForm({ player, isDemo = false }: PlayerProfileFormP
           </div>
           <Button type="submit" disabled={isLoading || isDemo} className="w-full md:w-auto mt-8">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isDemo ? 'This is a Demo' : (isLoading ? 'Analyzing...' : 'Submit Profile')}
+            {isDemo ? 'This is a Demo' : (isLoading ? 'Submitting...' : 'Submit Profile')}
           </Button>
         </fieldset>
       </form>
