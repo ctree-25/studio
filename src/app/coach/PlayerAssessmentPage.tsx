@@ -215,7 +215,7 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
                   <CardDescription>Provide your assessment for the player. Your feedback will be saved as a new evaluation.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                 <fieldset disabled={isDemo}>
+                 <fieldset disabled={isDemo || isSubmitting}>
                   <div className="space-y-4 pt-4">
                     <Textarea
                       value={feedback}
