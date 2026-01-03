@@ -89,25 +89,38 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
 
     try {
         const { profilePicture, ...playerData } = data;
+        const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
         
-        let pictureUrl = player?.profilePictureUrl || playerAvatar?.imageUrl || '';
-        
+        // Optimistically set the profile data without the picture URL
+        const optimisticProfileData = {
+            ...playerData,
+            userId: user.uid,
+            profilePictureUrl: player?.profilePictureUrl || playerAvatar?.imageUrl || '',
+            submitted: true,
+        };
+        setDocumentNonBlocking(playerProfileRef, optimisticProfileData, { merge: true });
+
         if (profilePicture instanceof File) {
             const storage = getStorage(firebaseApp);
             const storageRef = ref(storage, `profile-pictures/${user.uid}/${profilePicture.name}`);
-            const uploadResult = await uploadBytes(storageRef, profilePicture);
-            pictureUrl = await getDownloadURL(uploadResult.ref);
+            
+            // Non-blocking upload
+            uploadBytes(storageRef, profilePicture).then(uploadResult => {
+                getDownloadURL(uploadResult.ref).then(pictureUrl => {
+                    // Update the doc with the final URL, non-blockingly
+                    setDocumentNonBlocking(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
+                }).catch(error => {
+                     console.error('Failed to get download URL:', error);
+                     toast({ variant: 'destructive', title: 'Image URL Failed', description: 'Could not get the image URL. Please try re-uploading.' });
+                });
+            }).catch(error => {
+                console.error('Failed to upload profile picture:', error);
+                toast({ variant: 'destructive', title: 'Upload Failed', description: 'There was an error uploading your picture. Please try again.' });
+            });
+        } else {
+             // If no new picture, ensure existing data is set
+             setDocumentNonBlocking(playerProfileRef, optimisticProfileData, { merge: true });
         }
-
-        const playerProfileData = {
-            ...playerData,
-            userId: user.uid,
-            profilePictureUrl: pictureUrl,
-            submitted: true,
-        };
-
-        const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
-        setDocumentNonBlocking(playerProfileRef, playerProfileData, { merge: true });
 
       toast({
         title: 'Profile Submitted!',
