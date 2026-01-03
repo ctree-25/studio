@@ -8,8 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useAppContext, PlayerProfile } from '@/context/AppContext';
-import { analyzePlayerFootage } from '@/ai/flows/analyze-player-footage';
+import { PlayerProfile } from '@/context/AppContext';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, Link as LinkIcon } from 'lucide-react';
@@ -42,7 +41,6 @@ interface PlayerProfileFormProps {
 }
 
 export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: PlayerProfileFormProps) {
-  const { addPlayer, updatePlayer } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(player?.profilePictureUrl || playerAvatar?.imageUrl);
   const { toast } = useToast();
@@ -91,11 +89,12 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
         const { profilePicture, ...playerData } = data;
         const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
         
-        // Optimistically set the profile data without the picture URL
+        // Use the current avatar preview for the optimistic update.
+        // This could be the existing URL or a new base64 preview.
         const optimisticProfileData = {
             ...playerData,
             userId: user.uid,
-            profilePictureUrl: player?.profilePictureUrl || playerAvatar?.imageUrl || '',
+            profilePictureUrl: avatarPreview || playerAvatar?.imageUrl || '',
             submitted: true,
         };
         setDocumentNonBlocking(playerProfileRef, optimisticProfileData, { merge: true });
@@ -107,7 +106,7 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
             // Non-blocking upload
             uploadBytes(storageRef, profilePicture).then(uploadResult => {
                 getDownloadURL(uploadResult.ref).then(pictureUrl => {
-                    // Update the doc with the final URL, non-blockingly
+                    // Update the doc with the final, permanent URL
                     setDocumentNonBlocking(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
                 }).catch(error => {
                      console.error('Failed to get download URL:', error);
@@ -117,9 +116,6 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
                 console.error('Failed to upload profile picture:', error);
                 toast({ variant: 'destructive', title: 'Upload Failed', description: 'There was an error uploading your picture. Please try again.' });
             });
-        } else {
-             // If no new picture, ensure existing data is set
-             setDocumentNonBlocking(playerProfileRef, optimisticProfileData, { merge: true });
         }
 
       toast({
@@ -131,8 +127,6 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
         onProfileCreate();
       }
 
-      form.reset();
-      setAvatarPreview(playerAvatar?.imageUrl);
     } catch (error) {
       console.error('Failed to process profile:', error);
       toast({
