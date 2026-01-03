@@ -1,3 +1,4 @@
+
 'use client';
 
 import { AppHeader } from '@/components/AppHeader';
@@ -207,8 +208,7 @@ function PlayerAssessmentPage({ playerId }: { playerId: string }) {
   );
 }
 
-export default function PlayerReviewPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function PlayerReviewPage({ params: { id } }: { params: { id: string } }) {
   return (
     <div className="flex flex-col min-h-screen">
       <AppHeader />
