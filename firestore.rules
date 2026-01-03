@@ -1,149 +1,135 @@
 /**
- * Core Philosophy: This ruleset enforces a strict user-ownership security model. All user-specific data, such as player and coach profiles, is nested within a user's own document tree (`/users/{userId}/...`), ensuring that only the authenticated owner can access or modify their private information.
- * Data Structure: The data is organized hierarchically. Core user information is at `/users/{userId}`. Specific profiles like `/playerProfiles` and `/coachProfiles` are subcollections under the user's document. Shared or public data, like `/targetSchools`, resides in top-level collections.
- * Key Security Decisions:
- *  - Strict Ownership: Access to any path under `/users/{userId}` is restricted to the user whose UID matches `{userId}`.
- *  - Public Reads: The `/targetSchools` collection is publicly readable by any client, but writes are disabled pending a clear administrative or ownership model. This prevents unauthorized data modification.
- *  - User Listing Disabled: To protect user privacy, it is not possible to list all documents in the `/users` collection.
- *  - Shared Access for Feedback: Access to `/playerProfiles/{playerProfileId}/coachFeedbacks` is shared. The player can read all feedback on their profile, but only the coach who created a specific feedback entry can create, update, or delete it.
- * Denormalization for Authorization: To ensure performant and secure rules, this model relies on denormalized user IDs. For example, a `CoachFeedback` document must contain a `coachUserId` field. This allows rules to directly check the ID against the authenticated user's UID (`request.auth.uid`) without performing slow and costly `get()` operations on other documents.
- * Structural Segregation: Private user data (profiles) is kept in user-owned subcollections, while public data (schools) is in a separate top-level collection. This separation simplifies rules and improves security for list operations.
+ * # Firestore Security Rules for CourtConnect
+ *
+ * ## Core Philosophy
+ * This ruleset enforces a strict user-ownership and role-based model. Users have full control over their own data (like their profile), while interactions between different user types (like a coach giving feedback to a player) are governed by specific authorization checks. The primary goal is to ensure data privacy and integrity while allowing for public discovery of profiles.
+ *
+ * ## Data Structure
+ * The data is organized into four top-level collections: `/users`, `/playerProfiles`, `/coaches`, and `/coachFeedback`. This flat structure simplifies rules by avoiding complex path traversals, but it relies heavily on denormalized IDs within documents for authorization checks.
+ *
+ * ## Key Security Decisions
+ * - **Profile Visibility**: Player and Coach profiles (`/playerProfiles`, `/coaches`) are publicly readable to allow for discovery within the app. However, write access is strictly limited to the profile owner.
+ * - **User Listing Disabled**: To protect user privacy, it is not possible to list all documents in the `/users` collection.
+ * - **Feedback Privacy**: Feedback in `/coachFeedback` is private and can only be read by the coach who wrote it or the player who received it.
+ * - **Default Deny**: Any access not explicitly granted by these rules is denied.
+ *
+ * ## Denormalization for Authorization
+ * To create simpler and more performant rules, this ruleset relies on denormalized data. For example:
+ * - The `/playerProfiles/{profileId}` document contains a `userId` field. This allows rules to verify ownership directly (`resource.data.userId == request.auth.uid`) without performing a costly and slow `get()` on another document.
+ * - Similarly, `/coachFeedback` documents contain both a `coachId` and a `playerId`, allowing rules to grant access to the correct two parties without extra lookups.
+ *
+ * ## Structural Segregation
+ * Data is logically separated into distinct top-level collections based on its purpose and access patterns (e.g., public profiles vs. private feedback). This is more secure and performant than mixing public and private data in a single collection.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for common authorization patterns
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * isSignedIn
+     * Checks if the user is authenticated.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Checks if the requesting user is the owner of the document based on a path parameter.
+    /**
+     * isOwner
+     * Checks if the authenticated user's UID matches the provided userId.
+     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Checks if a document exists and if the user is the owner. Used for update/delete.
+    /**
+     * isExistingOwner
+     * Checks for ownership on a document that must already exist.
+     * Crucial for preventing updates or deletes on non-existent documents.
+     */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Manages user profile documents, which store basic account information.
+     * isCoach
+     * Verifies that the requesting user has the 'coach' role in their user document.
+     * This prevents non-coach users from creating feedback.
+     */
+    function isCoach() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach';
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Manages user account data. A user can create their own document
+     *   and can only ever read or write their own data.
      * @path /users/{userId}
-     * @allow (create) A new user with UID 'user123' creating their own document at `/users/user123`.
-     * @deny (get) User 'user456' trying to read the document at `/users/user123`.
-     * @deny (list) Any user trying to list all documents in the `/users` collection.
-     * @principle Enforces self-creation and strict ownership of a user's root document.
+     * @allow (create) An authenticated user creating their own user document.
+     * @deny (get) A user trying to read another user's document.
+     * @principle Restricts access to a user's own data tree.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow list: if false;
+      allow list: if false; // User privacy: explicitly disallow listing all users.
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
     }
-    
-    match /coachProfiles/{coachId} {
-      allow get: if isSignedIn();
-      allow create: if isOwner(coachId) && request.resource.data.userId == coachId;
-      allow update, delete: if isOwner(coachId);
-    }
 
     /**
-     * @description Manages player profiles, which are owned by and nested under a user.
-     * @path /users/{userId}/playerProfiles/{playerProfileId}
-     * @allow (create) User 'user123' creating their own profile at `/users/user123/playerProfiles/profile_abc`.
-     * @allow (list) User 'user123' listing all of their own profiles.
-     * @deny (update) User 'user456' trying to update a profile at `/users/user123/playerProfiles/profile_abc`.
-     * @principle Restricts access to a user's own data tree, ensuring data privacy.
-     */
-    match /users/{userId}/playerProfiles/{playerProfileId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Manages coach profiles, which are owned by and nested under a user.
-     * @path /users/{userId}/coachProfiles/{coachProfileId}
-     * @allow (create) User 'user123' creating their own profile at `/users/user123/coachProfiles/profile_xyz`.
-     * @allow (list) User 'user123' listing all of their own profiles.
-     * @deny (update) User 'user456' trying to update a profile at `/users/user123/coachProfiles/profile_xyz`.
-     * @principle Restricts access to a user's own data tree, ensuring data privacy.
-     */
-    match /users/{userId}/coachProfiles/{coachProfileId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Manages player profiles stored at the top-level. This rule allows signed-in users to view profiles, but only the owner can modify them.
+     * @description Player profiles are public for anyone to view but can only
+     *   be created, updated, or deleted by the player who owns the profile.
      * @path /playerProfiles/{playerProfileId}
-     * @allow (get) Any signed-in user reading `/playerProfiles/profile_abc`.
-     * @allow (update) The user whose UID matches `resource.data.userId` updating the document.
-     * @deny (delete) A user who is not the owner trying to delete the profile.
-     * @principle Enforces document ownership for writes while allowing broader read access.
+     * @allow (get) Any user, signed in or not, retrieving a specific player profile.
+     * @deny (update) A user trying to modify another player's profile.
+     * @principle Public read with owner-only writes. Enforces relational integrity by ensuring the document ID matches the owner's UID.
      */
     match /playerProfiles/{playerProfileId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isOwner(playerProfileId) && request.resource.data.userId == playerProfileId;
-      allow update: if resource != null && isOwner(resource.data.userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if resource != null && isOwner(resource.data.userId);
-
-      /**
-       * @description Manages feedback from a coach to a player.
-       * @path /playerProfiles/{playerProfileId}/coachFeedbacks/{coachFeedbackId}
-       * @allow (create) A coach creating feedback, where the new document's `coachUserId` matches their auth UID.
-       * @allow (get) The player or the coach associated with the feedback reading it.
-       * @deny (update) The player trying to update the feedback a coach left for them.
-       * @principle Implements shared access using denormalized IDs for authorization.
-       */
-      match /coachFeedbacks/{coachFeedbackId} {
-        // Helper to check if the requester is the player who owns the parent profile.
-        // This requires a `get()` call because the parent document's ownership determines access.
-        function isPlayerOwner() {
-          return get(/databases/$(database)/documents/playerProfiles/$(playerProfileId)).data.userId == request.auth.uid;
-        }
-        
-        // Helper to check if the requester is the coach who wrote the feedback.
-        // This uses a denormalized ID on the feedback document itself, avoiding a `get()`.
-        function isFeedbackAuthor(docData) {
-          return isSignedIn() && request.auth.uid == docData.coachUserId;
-        }
-
-        // Feedback can be read by the player who owns the profile or the coach who wrote it.
-        allow get: if resource != null && (isPlayerOwner() || isFeedbackAuthor(resource.data));
-        // Only the player who owns the profile can list all of its feedback.
-        allow list: if isPlayerOwner();
-        // Feedback can only be created by the coach, who must embed their own user ID.
-        allow create: if isFeedbackAuthor(request.resource.data) && request.resource.data.playerProfileId == playerProfileId;
-        // Feedback can only be updated/deleted by the coach who authored it. Relational IDs are immutable.
-        allow update: if resource != null && isFeedbackAuthor(resource.data) && request.resource.data.playerProfileId == resource.data.playerProfileId && request.resource.data.coachUserId == resource.data.coachUserId;
-        allow delete: if resource != null && isFeedbackAuthor(resource.data);
-      }
+      allow get: if true;
+      allow list: if true;
+      allow create: if isOwner(playerProfileId) && request.resource.data.userId == request.auth.uid;
+      allow update: if isExistingOwner(playerProfileId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(playerProfileId);
     }
 
     /**
-     * @description Manages target school information, which is publicly readable.
-     * @path /targetSchools/{targetSchoolId}
-     * @allow (get) Any user, signed-in or not, reading `/targetSchools/school_xyz`.
-     * @deny (create) Any user trying to create a new school document.
-     * @principle Provides public read access but restricts writes until a secure ownership model is defined.
+     * @description Coach profiles are public for anyone to view but can only
+     *   be created, updated, or deleted by the coach who owns the profile.
+     * @path /coaches/{coachId}
+     * @allow (list) Any user, signed in or not, listing all available coach profiles.
+     * @deny (create) A user trying to create a coach profile for another user.
+     * @principle Public read with owner-only writes. Enforces relational integrity between the document, its internal data, and the authenticated user.
      */
-    match /targetSchools/{targetSchoolId} {
+    match /coaches/{coachId} {
       allow get: if true;
       allow list: if true;
-      // CRITICAL: Cannot implement owner-only writes. The 'TargetSchool' entity is missing an 'ownerId' or 'authorId' field.
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create: if isOwner(coachId) && request.resource.data.userId == request.auth.uid;
+      allow update: if isExistingOwner(coachId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(coachId);
+    }
+
+    /**
+     * @description Manages feedback given by coaches to players. Feedback is private.
+     *   Only the coach who wrote it or the player who received it can read it.
+     *   Only the coach can create, update, or delete it.
+     * @path /coachFeedback/{coachFeedbackId}
+     * @allow (get) The player (identified by `playerId`) reading their own feedback.
+     * @deny (update) The player trying to modify the feedback they received.
+     * @principle Shared access (closed collaborators). Access is restricted to parties identified in the document's data fields.
+     */
+    match /coachFeedback/{coachFeedbackId} {
+      allow get: if isSignedIn() && (isOwner(resource.data.coachId) || isOwner(resource.data.playerId));
+      allow list: if isSignedIn() && (request.query.coachId == request.auth.uid || request.query.playerId == request.auth.uid);
+      allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.coachId) && request.resource.data.coachId == resource.data.coachId && request.resource.data.playerId == resource.data.playerId;
+      allow delete: if isExistingOwner(resource.data.coachId);
     }
   }
 }
