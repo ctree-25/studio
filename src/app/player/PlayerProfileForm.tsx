@@ -40,6 +40,46 @@ interface PlayerProfileFormProps {
   onProfileCreate?: () => void;
 }
 
+const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<File> => {
+    return new Promise((resolve, reject) => {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = Math.round(height * (maxWidth / width));
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = Math.round(width * (maxHeight / height));
+                    height = maxHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                return reject(new Error('Could not get canvas context'));
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob(blob => {
+                if (!blob) {
+                    return reject(new Error('Canvas to Blob conversion failed'));
+                }
+                const resizedFile = new File([blob], file.name, { type: file.type });
+                resolve(resizedFile);
+            }, file.type);
+        };
+        img.onerror = reject;
+    });
+};
+
 export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: PlayerProfileFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(player?.profilePictureUrl || playerAvatar?.imageUrl);
@@ -89,8 +129,6 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
         const { profilePicture, ...playerData } = data;
         const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
         
-        // Use the current avatar preview for the optimistic update.
-        // This could be the existing URL or a new base64 preview.
         const optimisticProfileData = {
             ...playerData,
             userId: user.uid,
@@ -100,13 +138,13 @@ export function PlayerProfileForm({ player, isDemo = false, onProfileCreate }: P
         setDocumentNonBlocking(playerProfileRef, optimisticProfileData, { merge: true });
 
         if (profilePicture instanceof File) {
+            const resizedImage = await resizeImage(profilePicture, 400, 400);
+
             const storage = getStorage(firebaseApp);
-            const storageRef = ref(storage, `profile-pictures/${user.uid}/${profilePicture.name}`);
+            const storageRef = ref(storage, `profile-pictures/${user.uid}/${resizedImage.name}`);
             
-            // Non-blocking upload
-            uploadBytes(storageRef, profilePicture).then(uploadResult => {
+            uploadBytes(storageRef, resizedImage).then(uploadResult => {
                 getDownloadURL(uploadResult.ref).then(pictureUrl => {
-                    // Update the doc with the final, permanent URL
                     setDocumentNonBlocking(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
                 }).catch(error => {
                      console.error('Failed to get download URL:', error);
