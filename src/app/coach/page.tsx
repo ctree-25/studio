@@ -17,7 +17,7 @@ function CoachProfileLoader() {
 
     const coachProfileRef = useMemoFirebase(() => {
         if (!user) return null;
-        return doc(firestore, 'coachProfiles', user.uid);
+        return doc(firestore, 'coaches', user.uid);
     }, [user, firestore]);
     const { data: coachProfile, isLoading: isProfileLoading, error: profileError } = useDoc(coachProfileRef);
 

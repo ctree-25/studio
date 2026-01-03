@@ -79,7 +79,7 @@ export function CoachProfileForm({ onProfileCreate }: { onProfileCreate: () => v
         ...data
       };
 
-      const coachProfileRef = doc(firestore, 'coachProfiles', user.uid);
+      const coachProfileRef = doc(firestore, 'coaches', user.uid);
       setDocumentNonBlocking(coachProfileRef, coachProfileData, { merge: false });
 
       toast({
