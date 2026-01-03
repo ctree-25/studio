@@ -19,17 +19,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const SKILLS = ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'];
 
-export default function PlayerReviewPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+function PlayerAssessmentPage({ playerId }: { playerId: string }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
   const playerProfileRef = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
-    return doc(firestore, 'playerProfiles', id);
-  }, [firestore, id]);
+    if (!firestore || !playerId) return null;
+    return doc(firestore, 'playerProfiles', playerId);
+  }, [firestore, playerId]);
 
   const { data: player, isLoading: isPlayerLoading } = useDoc(playerProfileRef);
 
@@ -60,8 +59,8 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
       description: `Your feedback for ${player.name} is being saved.`,
     });
 
-    const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\\n');
-    const fullFeedbackText = `Assessment:\\n${feedback}\\n\\nSkill Ratings:\\n${skillRatingsText}`;
+    const skillRatingsText = SKILLS.map(skill => `- ${skill}: ${skillRatings[skill]}/10`).join('\n');
+    const fullFeedbackText = `Assessment:\n${feedback}\n\nSkill Ratings:\n${skillRatingsText}`;
 
     const feedbackData = {
         coachId: user.uid,
@@ -94,23 +93,20 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
 
   if (isPlayerLoading) {
     return (
-        <div className="flex flex-col min-h-screen">
-            <AppHeader />
-            <main className="flex-1 p-4 md:p-8">
-                <div className="max-w-5xl mx-auto">
-                    <Skeleton className="h-6 w-32 mb-4" />
-                     <div className="grid md:grid-cols-2 gap-8">
-                        <div className="space-y-8">
-                            <Skeleton className="h-56 w-full" />
-                            <Skeleton className="h-72 w-full" />
-                        </div>
-                        <div className="space-y-8">
-                            <Skeleton className="h-96 w-full" />
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
+      <main className="flex-1 p-4 md:p-8">
+          <div className="max-w-5xl mx-auto">
+              <Skeleton className="h-6 w-32 mb-4" />
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-8">
+                      <Skeleton className="h-56 w-full" />
+                      <Skeleton className="h-72 w-full" />
+                  </div>
+                  <div className="space-y-8">
+                      <Skeleton className="h-96 w-full" />
+                  </div>
+              </div>
+          </div>
+      </main>
     );
   }
 
@@ -119,9 +115,7 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <AppHeader />
-      <main className="flex-1 p-4 md:p-8">
+    <main className="flex-1 p-4 md:p-8">
         <div className="max-w-5xl mx-auto">
           <div className="mb-4">
             <Link href="/coach" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
@@ -210,6 +204,14 @@ export default function PlayerReviewPage({ params }: { params: { id: string } })
           </div>
         </div>
       </main>
+  );
+}
+
+export default function PlayerReviewPage({ params }: { params: { id: string } }) {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <AppHeader />
+      <PlayerAssessmentPage playerId={params.id} />
     </div>
   );
 }
