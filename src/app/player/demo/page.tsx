@@ -8,10 +8,40 @@ import { useAppContext } from '@/context/AppContext';
 import { PlayerProfileForm } from '../PlayerProfileForm';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const profileFormSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
+  position: z.string().min(2, { message: 'Position is required.' }),
+  height: z.string().min(2, { message: 'Height is required.' }),
+  gradYear: z.string().min(4, { message: 'Valid graduation year is required.' }),
+  targetLevel: z.enum(['D1', 'D2', 'D3'], { required_error: 'Target level is required.' }),
+  preferredSchools: z.string().min(3, { message: 'Please list at least one school.' }),
+  highlightVideoUrl: z.string().url({ message: 'Please enter a valid video URL.' }),
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
 
 export default function PlayerDemoPage() {
     const { getPlayer } = useAppContext();
     const player = getPlayer('mock-player-2');
+
+    const form = useForm<ProfileFormValues>({
+        resolver: zodResolver(profileFormSchema),
+        defaultValues: player ? {
+            name: player.name,
+            position: player.position,
+            height: player.height,
+            gradYear: player.gradYear,
+            targetLevel: player.targetLevel,
+            preferredSchools: player.preferredSchools,
+            highlightVideoUrl: player.highlightVideoUrl,
+        } : {},
+        mode: 'onChange',
+    });
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -28,7 +58,7 @@ export default function PlayerDemoPage() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <PlayerProfileForm player={player} isDemo={true} />
+                                    <PlayerProfileForm form={form} isDemo={true} isLoading={false} />
                                 </CardContent>
                             </Card>
 

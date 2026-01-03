@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, UseFormReturn } from 'react-hook-form';
@@ -24,16 +25,22 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 interface PlayerProfileFormProps {
   form: UseFormReturn<ProfileFormValues>;
-  onSubmit: (data: ProfileFormValues) => void;
+  onSubmit?: (data: ProfileFormValues) => void;
   isLoading: boolean;
   isDemo?: boolean;
 }
 
 export function PlayerProfileForm({ form, onSubmit, isLoading, isDemo = false }: PlayerProfileFormProps) {
 
+  const handleSubmit = (data: ProfileFormValues) => {
+    if (onSubmit) {
+      onSubmit(data);
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
         <fieldset disabled={isDemo || isLoading}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
               <FormField
@@ -146,10 +153,12 @@ export function PlayerProfileForm({ form, onSubmit, isLoading, isDemo = false }:
               )}
             />
           </div>
-          <Button type="submit" disabled={isLoading || isDemo} className="w-full md:w-auto mt-8">
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isDemo ? 'This is a Demo' : (isLoading ? 'Submitting...' : 'Submit Profile')}
-          </Button>
+          {!isDemo && (
+            <Button type="submit" disabled={isLoading} className="w-full md:w-auto mt-8">
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading ? 'Submitting...' : 'Submit Profile'}
+            </Button>
+          )}
         </fieldset>
       </form>
     </Form>
