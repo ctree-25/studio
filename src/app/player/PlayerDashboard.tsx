@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,12 +16,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Edit, Upload } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useState } from 'react';
-import { useUser, useFirestore, setDocumentNonBlocking, useFirebaseApp, useAuth } from '@/firebase';
+import { useUser, useFirestore, useFirebaseApp, useAuth } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
