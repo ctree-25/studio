@@ -118,8 +118,8 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
             reader.onerror = reject;
     });
 
-    const handleImageUploadInBackground = async (file: File, currentPictureUrl: string | undefined) => {
-        if (!user || !auth.currentUser) return;
+    const handleImageUploadInBackground = async (file: File) => {
+        if (!user || !auth.currentUser || !firestore) return;
     
         try {
             const resizedImage = await resizeImage(file, 400, 400);
@@ -135,9 +135,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
             const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
             await setDoc(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
 
-            // This update won't be immediately visible without a state update or reload,
-            // but the data will be correct in the backend.
-            console.log("Background image upload complete.");
+            onProfileUpdate({ profilePictureUrl: pictureUrl });
             
         } catch (error) {
           console.error('Failed to upload image in background:', error);
@@ -168,21 +166,20 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
         });
     
         try {
-            // Immediately save the text-based data
+            // Immediately save the text-based data, excluding the profilePictureUrl
             const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
             const profileDataToSave = {
                 ...data,
                 id: user.uid,
                 userId: user.uid,
                 submitted: true,
-                profilePictureUrl: profilePictureFile ? avatarPreview : player.profilePictureUrl,
             };
 
             await setDoc(playerProfileRef, profileDataToSave, { merge: true });
 
             // If there's a new picture, handle the upload in the background
             if (profilePictureFile) {
-                handleImageUploadInBackground(profilePictureFile, player.profilePictureUrl);
+                handleImageUploadInBackground(profilePictureFile);
             }
     
             toast({
@@ -190,7 +187,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                 description: 'Your changes have been saved.',
             });
     
-            // Optimistically update the UI with all data
+            // Optimistically update the UI with text data. The image will update when the background upload is complete.
             onProfileUpdate(profileDataToSave);
     
         } catch (error) {
@@ -282,4 +279,3 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
         </main>
     );
 }
-
