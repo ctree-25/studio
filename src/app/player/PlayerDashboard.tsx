@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Edit, Upload } from 'lucide-react';
+import { Upload, ChevronDown, ChevronUp } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useState } from 'react';
 import { useUser, useFirestore, useFirebaseApp, useAuth } from '@/firebase';
@@ -24,7 +24,6 @@ import { z } from 'zod';
 import { doc, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile } from 'firebase/auth';
-import { Loader2 } from 'lucide-react';
 
 interface PlayerDashboardProps {
     player: PlayerProfile;
@@ -88,6 +87,7 @@ const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<F
 
 export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(!player?.submitted);
     const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
     const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
 
@@ -118,39 +118,41 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
             reader.onerror = reject;
     });
 
-    const handleImageUploadInBackground = async (file: File) => {
+    const handleImageUploadInBackground = (file: File) => {
         if (!user || !auth.currentUser || !firestore) return;
     
-        try {
-            const resizedImage = await resizeImage(file, 400, 400);
-            const storage = getStorage(firebaseApp);
-            const storageRef = ref(storage, `profile-pictures/${user.uid}/${resizedImage.name}`);
-            
-            const uploadResult = await uploadBytes(storageRef, resizedImage);
-            const pictureUrl = await getDownloadURL(uploadResult.ref);
-            
-            // Update Auth profile and Firestore in the background
-            await updateProfile(auth.currentUser, { photoURL: pictureUrl });
-            
-            const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
-            await setDoc(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
-
-            onProfileUpdate({ profilePictureUrl: pictureUrl });
-            
-        } catch (error) {
-          console.error('Failed to upload image in background:', error);
-          // Optionally, show a toast that the image upload failed but the profile was saved.
-          toast({
-            variant: 'destructive',
-            title: 'Image Upload Failed',
-            description: 'Your profile text was saved, but the new image failed to upload. Please try updating it again.',
-          });
-        }
+        // Fire-and-forget this async logic
+        (async () => {
+            try {
+                const resizedImage = await resizeImage(file, 400, 400);
+                const storage = getStorage(firebaseApp);
+                const storageRef = ref(storage, `profile-pictures/${user.uid}/${resizedImage.name}`);
+                
+                const uploadResult = await uploadBytes(storageRef, resizedImage);
+                const pictureUrl = await getDownloadURL(uploadResult.ref);
+                
+                // Update Auth profile and Firestore in the background
+                await Promise.all([
+                   updateProfile(auth.currentUser!, { photoURL: pictureUrl }),
+                   setDoc(doc(firestore, 'playerProfiles', user.uid), { profilePictureUrl: pictureUrl }, { merge: true })
+                ]);
+    
+                onProfileUpdate({ profilePictureUrl: pictureUrl });
+                
+            } catch (error) {
+              console.error('Failed to upload image in background:', error);
+              toast({
+                variant: 'destructive',
+                title: 'Image Upload Failed',
+                description: 'Your profile text was saved, but the new image failed to upload. Please try updating it again.',
+              });
+            }
+        })();
     };
     
 
     async function onSubmit(data: ProfileFormValues) {
-        if (!user) {
+        if (!user || !firestore) {
             toast({
                 variant: 'destructive',
                 title: 'Error',
@@ -166,7 +168,6 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
         });
     
         try {
-            // Immediately save the text-based data, excluding the profilePictureUrl
             const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
             const profileDataToSave = {
                 ...data,
@@ -174,10 +175,10 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                 userId: user.uid,
                 submitted: true,
             };
-
+    
+            // Immediately save the text-based data
             await setDoc(playerProfileRef, profileDataToSave, { merge: true });
-
-            // If there's a new picture, handle the upload in the background
+    
             if (profilePictureFile) {
                 handleImageUploadInBackground(profilePictureFile);
             }
@@ -189,6 +190,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
     
             // Optimistically update the UI with text data. The image will update when the background upload is complete.
             onProfileUpdate(profileDataToSave);
+            setIsFormOpen(false); // Close form on successful submission
     
         } catch (error) {
           console.error('Failed to process profile:', error);
@@ -201,14 +203,14 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
           setIsLoading(false);
           setProfilePictureFile(null); // Clear file after processing
         }
-      }
+    }
 
     const displayedAvatar = avatarPreview || player?.profilePictureUrl || playerAvatarPlaceholder?.imageUrl;
 
     return (
         <main className="flex-1 p-4 md:p-8">
             <div className="max-w-4xl mx-auto space-y-8">
-                <Collapsible defaultOpen={!player?.submitted}>
+                <Collapsible open={isFormOpen} onOpenChange={setIsFormOpen}>
                     <Card>
                         <CardHeader>
                             <div className="flex justify-between items-start">
@@ -244,9 +246,9 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                                     </div>
                                 </div>
                                 <CollapsibleTrigger asChild>
-                                    <Button variant="outline" size="sm">
-                                        <Edit className="w-4 h-4 mr-2" />
-                                        {player?.submitted ? 'Edit Profile' : 'Complete Profile'}
+                                    <Button variant="ghost" size="sm" className='w-28'>
+                                        {isFormOpen ? 'Collapse' : 'Expand'}
+                                        {isFormOpen ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
                                     </Button>
                                 </CollapsibleTrigger>
                             </div>
