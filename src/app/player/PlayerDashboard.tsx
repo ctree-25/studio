@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,13 +15,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Edit, Upload } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useState } from 'react';
-import { useUser, useFirestore, setDocumentNonBlocking, useFirebaseApp } from '@/firebase';
+import { useUser, useFirestore, setDocumentNonBlocking, useFirebaseApp, useAuth } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { doc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateProfile } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 
 interface PlayerDashboardProps {
@@ -92,6 +92,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
 
     const { toast } = useToast();
     const { user } = useUser();
+    const auth = useAuth();
     const firestore = useFirestore();
     const firebaseApp = useFirebaseApp();
 
@@ -117,7 +118,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
     });
 
     async function onSubmit(data: ProfileFormValues) {
-        if (!user) {
+        if (!user || !auth.currentUser) {
             toast({
                 variant: 'destructive',
                 title: 'Error',
@@ -151,8 +152,18 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                 
                 uploadBytes(storageRef, resizedImage).then(uploadResult => {
                     getDownloadURL(uploadResult.ref).then(pictureUrl => {
+                        // Update Firestore document
                         setDocumentNonBlocking(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
-                        onProfileUpdate();
+                        
+                        // Also update the Firebase Auth user profile
+                        if (auth.currentUser) {
+                            updateProfile(auth.currentUser, { photoURL: pictureUrl }).then(() => {
+                                onProfileUpdate(); // Reload the page to reflect changes everywhere
+                            }).catch(error => {
+                                console.error('Failed to update auth profile:', error);
+                                toast({ variant: 'destructive', title: 'Auth Update Failed', description: 'Could not update your profile picture in your auth profile.' });
+                            });
+                        }
                     }).catch(error => {
                          console.error('Failed to get download URL:', error);
                          toast({ variant: 'destructive', title: 'Image URL Failed', description: 'Could not get the image URL. Please try re-uploading.' });
