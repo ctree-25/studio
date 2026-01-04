@@ -169,6 +169,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
     
         try {
             const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
+            // Intentionally do not include profilePictureUrl here
             const profileDataToSave = {
                 ...data,
                 id: user.uid,
@@ -180,6 +181,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
             await setDoc(playerProfileRef, profileDataToSave, { merge: true });
     
             if (profilePictureFile) {
+                // This function now runs in the background and will update the profilePictureUrl in Firestore when done.
                 handleImageUploadInBackground(profilePictureFile);
             }
     
@@ -247,7 +249,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                                 </div>
                                 <CollapsibleTrigger asChild>
                                     <Button variant="ghost" size="sm" className='w-28'>
-                                        {isFormOpen ? 'Collapse' : 'Expand'}
+                                        {isFormOpen ? 'Collapse' : 'Edit'}
                                         {isFormOpen ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
                                     </Button>
                                 </CollapsibleTrigger>
