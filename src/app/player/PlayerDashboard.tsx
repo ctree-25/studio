@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +27,7 @@ import { Loader2 } from 'lucide-react';
 
 interface PlayerDashboardProps {
     player: PlayerProfile;
-    onProfileUpdate: () => void;
+    onProfileUpdate: (newProfileData: Partial<PlayerProfile>) => void;
 }
 
 const playerAvatarPlaceholder = PlaceHolderImages.find((p) => p.id === 'player-avatar');
@@ -136,41 +135,39 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
     
         try {
             const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
+            let pictureUrl = player.profilePictureUrl;
             
-            const profileDataToSave = {
-                ...data,
-                id: user.uid,
-                userId: user.uid,
-                submitted: true,
-            };
-            
-            // First, save the text data
-            await setDoc(playerProfileRef, profileDataToSave, { merge: true });
-    
             if (profilePictureFile) {
                 const resizedImage = await resizeImage(profilePictureFile, 400, 400);
                 const storage = getStorage(firebaseApp);
                 const storageRef = ref(storage, `profile-pictures/${user.uid}/${resizedImage.name}`);
                 
                 const uploadResult = await uploadBytes(storageRef, resizedImage);
-                const pictureUrl = await getDownloadURL(uploadResult.ref);
-                
-                // Update Firestore document with the new URL
-                await setDoc(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
+                pictureUrl = await getDownloadURL(uploadResult.ref);
                 
                 // Also update the Firebase Auth user profile
-                if (auth.currentUser) {
-                    await updateProfile(auth.currentUser, { photoURL: pictureUrl });
-                }
+                await updateProfile(auth.currentUser, { photoURL: pictureUrl });
             }
+
+            const profileDataToSave = {
+                ...data,
+                id: user.uid,
+                userId: user.uid,
+                submitted: true,
+                profilePictureUrl: pictureUrl,
+            };
+
+            await setDoc(playerProfileRef, profileDataToSave, { merge: true });
     
-          toast({
-            title: 'Profile Updated!',
-            description: 'Your changes have been saved.',
-          });
+            toast({
+                title: 'Profile Updated!',
+                description: 'Your changes have been saved.',
+            });
     
-          // Reload the page to ensure all components have the latest user data
-          onProfileUpdate();
+            // Pass all the updated data back up to the parent
+            onProfileUpdate(profileDataToSave);
+            setAvatarPreview(undefined);
+            setProfilePictureFile(null);
     
         } catch (error) {
           console.error('Failed to process profile:', error);

@@ -14,6 +14,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
+import { PlayerProfile } from '@/context/AppContext';
 
 const profileFormSchema = z.object({
     name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -40,10 +41,15 @@ function PlayerProfileLoader() {
         return doc(firestore, 'playerProfiles', user.uid);
     }, [user, firestore]);
 
-    const { data: playerProfile, isLoading: isProfileLoading, error: profileError } = useDoc(playerProfileRef);
+    const { data, isLoading: isProfileLoading, error: profileError } = useDoc(playerProfileRef);
+    const [playerProfile, setPlayerProfile] = useState(data);
 
-    const handleProfileUpdate = () => {
-        window.location.reload();
+    useEffect(() => {
+        setPlayerProfile(data);
+    }, [data]);
+
+    const handleProfileUpdate = (newProfileData: Partial<PlayerProfile>) => {
+        setPlayerProfile(prev => ({...(prev || {}), ...newProfileData } as PlayerProfile));
     }
     
     const form = useForm<ProfileFormValues>({
@@ -57,6 +63,15 @@ function PlayerProfileLoader() {
           preferredSchools: playerProfile?.preferredSchools || '',
           highlightVideoUrl: playerProfile?.highlightVideoUrl || '',
         },
+        values: playerProfile ? { // ensures form syncs with state updates
+            name: playerProfile.name || '',
+            position: playerProfile.position || '',
+            height: playerProfile.height || '',
+            gradYear: playerProfile.gradYear || '',
+            targetLevel: playerProfile.targetLevel,
+            preferredSchools: playerProfile.preferredSchools || '',
+            highlightVideoUrl: playerProfile.highlightVideoUrl || '',
+        } : undefined,
       });
 
       async function onSubmit(data: ProfileFormValues) {
@@ -92,7 +107,7 @@ function PlayerProfileLoader() {
                 description: 'Your profile is now available for coaches to review.',
             });
     
-            handleProfileUpdate();
+            handleProfileUpdate(profileDataToSave);
     
         } catch (error) {
           console.error('Failed to process profile:', error);
