@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -117,8 +118,41 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
             reader.onerror = reject;
     });
 
+    const handleImageUploadInBackground = async (file: File, currentPictureUrl: string | undefined) => {
+        if (!user || !auth.currentUser) return;
+    
+        try {
+            const resizedImage = await resizeImage(file, 400, 400);
+            const storage = getStorage(firebaseApp);
+            const storageRef = ref(storage, `profile-pictures/${user.uid}/${resizedImage.name}`);
+            
+            const uploadResult = await uploadBytes(storageRef, resizedImage);
+            const pictureUrl = await getDownloadURL(uploadResult.ref);
+            
+            // Update Auth profile and Firestore in the background
+            await updateProfile(auth.currentUser, { photoURL: pictureUrl });
+            
+            const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
+            await setDoc(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
+
+            // This update won't be immediately visible without a state update or reload,
+            // but the data will be correct in the backend.
+            console.log("Background image upload complete.");
+            
+        } catch (error) {
+          console.error('Failed to upload image in background:', error);
+          // Optionally, show a toast that the image upload failed but the profile was saved.
+          toast({
+            variant: 'destructive',
+            title: 'Image Upload Failed',
+            description: 'Your profile text was saved, but the new image failed to upload. Please try updating it again.',
+          });
+        }
+    };
+    
+
     async function onSubmit(data: ProfileFormValues) {
-        if (!user || !auth.currentUser) {
+        if (!user) {
             toast({
                 variant: 'destructive',
                 title: 'Error',
@@ -129,45 +163,35 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
     
         setIsLoading(true);
         toast({
-          title: 'Processing Profile...',
-          description: 'Your profile is being submitted.',
+          title: 'Updating Profile...',
+          description: 'Your profile changes are being saved.',
         });
     
         try {
+            // Immediately save the text-based data
             const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
-            let pictureUrl = player.profilePictureUrl;
-            
-            if (profilePictureFile) {
-                const resizedImage = await resizeImage(profilePictureFile, 400, 400);
-                const storage = getStorage(firebaseApp);
-                const storageRef = ref(storage, `profile-pictures/${user.uid}/${resizedImage.name}`);
-                
-                const uploadResult = await uploadBytes(storageRef, resizedImage);
-                pictureUrl = await getDownloadURL(uploadResult.ref);
-                
-                // Also update the Firebase Auth user profile
-                await updateProfile(auth.currentUser, { photoURL: pictureUrl });
-            }
-
             const profileDataToSave = {
                 ...data,
                 id: user.uid,
                 userId: user.uid,
                 submitted: true,
-                profilePictureUrl: pictureUrl,
+                profilePictureUrl: profilePictureFile ? avatarPreview : player.profilePictureUrl,
             };
 
             await setDoc(playerProfileRef, profileDataToSave, { merge: true });
+
+            // If there's a new picture, handle the upload in the background
+            if (profilePictureFile) {
+                handleImageUploadInBackground(profilePictureFile, player.profilePictureUrl);
+            }
     
             toast({
                 title: 'Profile Updated!',
                 description: 'Your changes have been saved.',
             });
     
-            // Pass all the updated data back up to the parent
+            // Optimistically update the UI with all data
             onProfileUpdate(profileDataToSave);
-            setAvatarPreview(undefined);
-            setProfilePictureFile(null);
     
         } catch (error) {
           console.error('Failed to process profile:', error);
@@ -178,6 +202,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
           });
         } finally {
           setIsLoading(false);
+          setProfilePictureFile(null); // Clear file after processing
         }
       }
 
@@ -186,15 +211,15 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
     return (
         <main className="flex-1 p-4 md:p-8">
             <div className="max-w-4xl mx-auto space-y-8">
-                <Collapsible>
+                <Collapsible defaultOpen={!player?.submitted}>
                     <Card>
                         <CardHeader>
                             <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-4">
                                      <div className="relative group">
                                         <Avatar className="h-20 w-20">
-                                            <AvatarImage src={displayedAvatar} />
-                                            <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                                            <AvatarImage src={displayedAvatar} data-ai-hint="volleyball player"/>
+                                            <AvatarFallback>{player?.name?.charAt(0) || user?.displayName?.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                         <label htmlFor="pfp-upload-dashboard" className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition-opacity">
                                             <Upload className="w-6 h-6"/>
@@ -224,7 +249,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                                 <CollapsibleTrigger asChild>
                                     <Button variant="outline" size="sm">
                                         <Edit className="w-4 h-4 mr-2" />
-                                        Edit Profile
+                                        {player?.submitted ? 'Edit Profile' : 'Complete Profile'}
                                     </Button>
                                 </CollapsibleTrigger>
                             </div>
@@ -236,21 +261,25 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                         </CollapsibleContent>
                     </Card>
                 </Collapsible>
-
-                <Separator />
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Feedback &amp; Analysis</CardTitle>
-                        <CardDescription>
-                            Here is the feedback from coaches and your personalized training tips.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <PlayerFeedbackView player={player} />
-                    </CardContent>
-                </Card>
+                
+                {player?.submitted && (
+                  <>
+                    <Separator />
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Feedback &amp; Analysis</CardTitle>
+                            <CardDescription>
+                                Here is the feedback from coaches and your personalized training tips.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <PlayerFeedbackView player={player} />
+                        </CardContent>
+                    </Card>
+                  </>
+                )}
             </div>
         </main>
     );
 }
+

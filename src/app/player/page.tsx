@@ -5,7 +5,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlayerProfileForm } from './PlayerProfileForm';
 import Link from 'next/link';
-import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc } from 'firebase/firestore';
@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { PlayerProfile } from '@/context/AppContext';
+import { setDocumentNonBlocking } from '@/firebase';
 
 const profileFormSchema = z.object({
     name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -42,10 +43,12 @@ function PlayerProfileLoader() {
     }, [user, firestore]);
 
     const { data, isLoading: isProfileLoading, error: profileError } = useDoc(playerProfileRef);
-    const [playerProfile, setPlayerProfile] = useState(data);
+    const [playerProfile, setPlayerProfile] = useState<Partial<PlayerProfile> | null>(null);
 
     useEffect(() => {
-        setPlayerProfile(data);
+        if (data) {
+            setPlayerProfile(data);
+        }
     }, [data]);
 
     const handleProfileUpdate = (newProfileData: Partial<PlayerProfile>) => {
@@ -55,23 +58,23 @@ function PlayerProfileLoader() {
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema),
         defaultValues: {
-          name: playerProfile?.name || user?.displayName || '',
-          position: playerProfile?.position || '',
-          height: playerProfile?.height || '',
-          gradYear: playerProfile?.gradYear || '',
-          targetLevel: playerProfile?.targetLevel,
-          preferredSchools: playerProfile?.preferredSchools || '',
-          highlightVideoUrl: playerProfile?.highlightVideoUrl || '',
+          name: '',
+          position: '',
+          height: '',
+          gradYear: '',
+          targetLevel: undefined,
+          preferredSchools: '',
+          highlightVideoUrl: '',
         },
-        values: playerProfile ? { // ensures form syncs with state updates
-            name: playerProfile.name || '',
-            position: playerProfile.position || '',
-            height: playerProfile.height || '',
-            gradYear: playerProfile.gradYear || '',
-            targetLevel: playerProfile.targetLevel,
-            preferredSchools: playerProfile.preferredSchools || '',
-            highlightVideoUrl: playerProfile.highlightVideoUrl || '',
-        } : undefined,
+        values: {
+            name: playerProfile?.name || user?.displayName || '',
+            position: playerProfile?.position || '',
+            height: playerProfile?.height || '',
+            gradYear: playerProfile?.gradYear || '',
+            targetLevel: playerProfile?.targetLevel,
+            preferredSchools: playerProfile?.preferredSchools || '',
+            highlightVideoUrl: playerProfile?.highlightVideoUrl || '',
+        },
       });
 
       async function onSubmit(data: ProfileFormValues) {
@@ -100,6 +103,7 @@ function PlayerProfileLoader() {
                 submitted: true,
             };
             
+            // This is non-blocking now for the UI
             setDocumentNonBlocking(playerProfileRef, profileDataToSave, { merge: true });
     
             toast({
@@ -138,7 +142,7 @@ function PlayerProfileLoader() {
     }
 
     if (playerProfile) {
-        return <PlayerDashboard player={playerProfile as any} onProfileUpdate={handleProfileUpdate} />;
+        return <PlayerDashboard player={playerProfile as PlayerProfile} onProfileUpdate={handleProfileUpdate} />;
     }
 
     return (
