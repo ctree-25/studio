@@ -87,7 +87,7 @@ const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<F
 
 export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const [avatarPreview, setAvatarPreview] = useState(player?.profilePictureUrl || playerAvatarPlaceholder?.imageUrl);
+    const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
     const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
 
     const { toast } = useToast();
@@ -142,44 +142,34 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                 userId: user.uid,
                 submitted: true,
             };
-            setDocumentNonBlocking(playerProfileRef, profileDataToSave, { merge: true });
+            
+            // First, save the text data
+            await setDoc(playerProfileRef, profileDataToSave, { merge: true });
     
             if (profilePictureFile) {
                 const resizedImage = await resizeImage(profilePictureFile, 400, 400);
-    
                 const storage = getStorage(firebaseApp);
                 const storageRef = ref(storage, `profile-pictures/${user.uid}/${resizedImage.name}`);
                 
-                uploadBytes(storageRef, resizedImage).then(uploadResult => {
-                    getDownloadURL(uploadResult.ref).then(pictureUrl => {
-                        // Update Firestore document
-                        setDocumentNonBlocking(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
-                        
-                        // Also update the Firebase Auth user profile
-                        if (auth.currentUser) {
-                            updateProfile(auth.currentUser, { photoURL: pictureUrl }).then(() => {
-                                onProfileUpdate(); // Reload the page to reflect changes everywhere
-                            }).catch(error => {
-                                console.error('Failed to update auth profile:', error);
-                                toast({ variant: 'destructive', title: 'Auth Update Failed', description: 'Could not update your profile picture in your auth profile.' });
-                            });
-                        }
-                    }).catch(error => {
-                         console.error('Failed to get download URL:', error);
-                         toast({ variant: 'destructive', title: 'Image URL Failed', description: 'Could not get the image URL. Please try re-uploading.' });
-                    });
-                }).catch(error => {
-                    console.error('Failed to upload profile picture:', error);
-                    toast({ variant: 'destructive', title: 'Upload Failed', description: 'There was an error uploading your picture. Please try again.' });
-                });
-            } else {
-                 onProfileUpdate();
+                const uploadResult = await uploadBytes(storageRef, resizedImage);
+                const pictureUrl = await getDownloadURL(uploadResult.ref);
+                
+                // Update Firestore document with the new URL
+                await setDoc(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
+                
+                // Also update the Firebase Auth user profile
+                if (auth.currentUser) {
+                    await updateProfile(auth.currentUser, { photoURL: pictureUrl });
+                }
             }
     
           toast({
             title: 'Profile Updated!',
             description: 'Your changes have been saved.',
           });
+    
+          // Reload the page to ensure all components have the latest user data
+          onProfileUpdate();
     
         } catch (error) {
           console.error('Failed to process profile:', error);
@@ -193,6 +183,8 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
         }
       }
 
+    const displayedAvatar = avatarPreview || player?.profilePictureUrl || playerAvatarPlaceholder?.imageUrl;
+
     return (
         <main className="flex-1 p-4 md:p-8">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -203,7 +195,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                                 <div className="flex items-center gap-4">
                                      <div className="relative group">
                                         <Avatar className="h-20 w-20">
-                                            <AvatarImage src={avatarPreview || undefined} />
+                                            <AvatarImage src={displayedAvatar} />
                                             <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                         <label htmlFor="pfp-upload-dashboard" className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition-opacity">
