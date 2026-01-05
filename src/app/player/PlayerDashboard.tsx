@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, ChevronDown, ChevronUp } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useState } from 'react';
-import { useUser, useFirestore, useFirebaseApp, useAuth } from '@/firebase';
+import { useUser, useFirestore, useFirebaseApp, useAuth, setDocumentNonBlocking } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -121,7 +121,6 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
     const handleImageUploadInBackground = (file: File) => {
         if (!user || !auth.currentUser || !firestore) return;
     
-        // Fire-and-forget this async logic
         (async () => {
             try {
                 const resizedImage = await resizeImage(file, 400, 400);
@@ -131,11 +130,10 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                 const uploadResult = await uploadBytes(storageRef, resizedImage);
                 const pictureUrl = await getDownloadURL(uploadResult.ref);
                 
-                // Update Auth profile and Firestore in the background
-                await Promise.all([
-                   updateProfile(auth.currentUser!, { photoURL: pictureUrl }),
-                   setDoc(doc(firestore, 'playerProfiles', user.uid), { profilePictureUrl: pictureUrl }, { merge: true })
-                ]);
+                await updateProfile(auth.currentUser!, { photoURL: pictureUrl });
+
+                const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
+                await setDoc(playerProfileRef, { profilePictureUrl: pictureUrl }, { merge: true });
     
                 onProfileUpdate({ profilePictureUrl: pictureUrl });
                 
@@ -169,7 +167,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
     
         try {
             const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
-            // Intentionally do not include profilePictureUrl here
+            
             const profileDataToSave = {
                 ...data,
                 id: user.uid,
@@ -177,11 +175,9 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                 submitted: true,
             };
     
-            // Immediately save the text-based data
             await setDoc(playerProfileRef, profileDataToSave, { merge: true });
     
             if (profilePictureFile) {
-                // This function now runs in the background and will update the profilePictureUrl in Firestore when done.
                 handleImageUploadInBackground(profilePictureFile);
             }
     
@@ -190,9 +186,8 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                 description: 'Your changes have been saved.',
             });
     
-            // Optimistically update the UI with text data. The image will update when the background upload is complete.
             onProfileUpdate(profileDataToSave);
-            setIsFormOpen(false); // Close form on successful submission
+            setIsFormOpen(false); 
     
         } catch (error) {
           console.error('Failed to process profile:', error);
@@ -203,7 +198,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
           });
         } finally {
           setIsLoading(false);
-          setProfilePictureFile(null); // Clear file after processing
+          setProfilePictureFile(null); 
         }
     }
 
@@ -274,7 +269,7 @@ export function PlayerDashboard({ player, onProfileUpdate }: PlayerDashboardProp
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <PlayerFeedbackView player={player} />
+                            <PlayerFeedbackView player={player} onProfileUpdate={onProfileUpdate} />
                         </CardContent>
                     </Card>
                   </>

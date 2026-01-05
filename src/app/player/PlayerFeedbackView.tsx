@@ -18,8 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PlayerOverallScore } from "@/components/PlayerOverallScore";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { useCollection, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from "@/firebase";
+import { collection, query, where, doc } from "firebase/firestore";
 
 const getLatestAssessmentsPerCoach = (assessments: Assessment[]): Assessment[] => {
     if (!assessments || assessments.length === 0) return [];
@@ -105,14 +105,14 @@ const getRatingBarClassName = (rating: number) => {
     return '[&>div]:bg-orange-400';
 }
 
-export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerProfile | undefined, isDemo?: boolean }) {
+export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: { player: PlayerProfile | undefined, isDemo?: boolean, onProfileUpdate?: (updates: Partial<PlayerProfile>) => void }) {
     const { updatePlayer, getPlayer } = useAppContext();
+    const { user } = useUser();
     const firestore = useFirestore();
     const [isLoading, setIsLoading] = useState(false);
     const [replies, setReplies] = useState<Record<string, string>>({});
     const { toast } = useToast();
     
-    // For the demo view, we pull the mock player from the context which has assessments.
     const demoPlayer = isDemo ? getPlayer('mock-player-2') : null;
     const isLive = !isDemo;
 
@@ -170,7 +170,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
 
         setIsLoading(true);
         toast({
-            title: 'Generating Training Plan...',
+            title: 'Generating Training Tips...',
             description: 'Our AI is creating a personalized plan for you.'
         });
 
@@ -181,15 +181,16 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
             });
 
             if (isDemo) {
-                // In demo, we update context state
                 updatePlayer('mock-player-2', { trainingPlan });
-            } else {
-                 updatePlayer(player.id, { trainingPlan });
+            } else if (user && firestore) {
+                const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
+                setDocumentNonBlocking(playerProfileRef, { trainingPlan }, { merge: true });
+                onProfileUpdate?.({ trainingPlan });
             }
             
             toast({
-                title: 'Training Plan Generated!',
-                description: 'Your new training plan is ready to view.'
+                title: 'Training Tips Generated!',
+                description: 'Your new training tips are ready to view.'
             });
         } catch (error) {
             console.error("Failed to generate training plan:", error);
@@ -291,7 +292,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                             const body = `<strong class="text-primary">Assessment:</strong>\n${assessment.feedbackText}\n\n${skillRatingsText}`;
 
                                             return (
-                                                <div key={assessment.id} className={assessmentIndex > 0 ? "pt-4 border-t border-border/50" : ""}>
+                                                <div key={assessment.id || assessmentIndex} className={assessmentIndex > 0 ? "pt-4 border-t border-border/50" : ""}>
                                                     <p
                                                         className="whitespace-pre-wrap text-muted-foreground"
                                                         dangerouslySetInnerHTML={{ __html: body }}
@@ -350,9 +351,9 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                     <CardContent className="pt-6">
                         {!currentTrainingPlan ? (
                              <div className="text-center py-8">
-                                <p className="text-muted-foreground mb-4">Click the button to generate a new training plan based on your latest feedback.</p>
+                                <p className="text-muted-foreground mb-4">Click the button to generate new training tips based on your latest feedback.</p>
                                 <Button onClick={handleGeneratePlan} disabled={isLoading || coachAssessmentsForChart.length === 0}>
-                                    {isLoading ? <Loader2 className="animate-spin" /> : 'Generate Training Plan'}
+                                    {isLoading ? <Loader2 className="animate-spin" /> : 'Generate Training Tips'}
                                 </Button>
                             </div>
                         ) : (
