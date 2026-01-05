@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { PlayerProfile, Assessment } from "@/context/AppContext";
 import { generateTrainingPlan, GenerateTrainingPlanOutput } from "@/ai/flows/generate-training-plan";
 import { Button } from "@/components/ui/button";
-import { Loader2, Star, Youtube, Info } from "lucide-react";
+import { Loader2, Youtube, Info } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -211,7 +211,7 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
                 <TabsTrigger value="skill-assessment" className="whitespace-normal h-auto">Skill Assessment</TabsTrigger>
                 <TabsTrigger value="coach-feedback" className="whitespace-normal h-auto">Coach Feedback</TabsTrigger>
                 <TabsTrigger value="training-tips" className="whitespace-normal h-auto inline-flex items-center gap-2">
-                    <Star className="w-4 h-4" /> Training Tips
+                    ✨ Training Tips
                 </TabsTrigger>
             </TabsList>
             <TabsContent value="skill-assessment">
@@ -273,7 +273,7 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
                                         {coach && (
                                             <div className="flex items-center gap-1 mt-2 sm:mt-0">
                                                 {Array.from({length: 5}).map((_, i) => (
-                                                    <Star key={i} className={`w-4 h-4 ${i < coach.rating ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/50'}`} />
+                                                    <svg key={i} className={`w-4 h-4 ${i < coach.rating ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/50'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                                                 ))}
                                             </div>
                                         )}
@@ -355,7 +355,7 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
                              <div className="text-center py-8">
                                 <p className="text-muted-foreground mb-4">Click the button to generate new training tips based on your latest feedback.</p>
                                 <Button onClick={handleGeneratePlan} disabled={isLoading || coachAssessmentsForChart.length === 0}>
-                                    {isLoading ? <Loader2 className="animate-spin" /> : <><Star className="w-4 h-4 mr-2" />Generate Training Tips</>}
+                                    {isLoading ? <Loader2 className="animate-spin" /> : <>✨ Generate Training Tips</>}
                                 </Button>
                             </div>
                         ) : (
@@ -387,7 +387,7 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
                                 </div>
                                 <Separator />
                                  <Button onClick={handleGeneratePlan} disabled={isLoading} variant="outline" className="w-full">
-                                    {isLoading ? <Loader2 className="animate-spin" /> : <><Star className="w-4 h-4 mr-2" />Generate New Training Tips</>}
+                                    {isLoading ? <Loader2 className="animate-spin" /> : <>✨ Generate New Training Tips</>}
                                  </Button>
                             </div>
                         )}
@@ -397,5 +397,7 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
         </Tabs>
     );
 }
+
+    
 
     
