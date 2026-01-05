@@ -3,17 +3,19 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDoc, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useDoc, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, BarChart2, Calendar, MapPin, Ruler } from 'lucide-react';
-import { doc, collection } from 'firebase/firestore';
+import { doc, collection, query, where, orderBy } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAppContext } from '@/context/AppContext';
+import { useAppContext, Assessment } from '@/context/AppContext';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Separator } from '@/components/ui/separator';
 
 const SKILLS_BY_POSITION: Record<string, string[]> = {
     'Setter': ['Setting Technique', 'Footwork', 'Decision Making', 'Defense', 'Serving'],
@@ -66,6 +68,18 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
   
   const demoPlayer = isDemo ? getPlayer(playerId) : null;
   const player = isDemo ? demoPlayer : livePlayer;
+
+  const previousAssessmentsQuery = useMemoFirebase(() => {
+    if (!firestore || !user || !player || !isLive) return null;
+    return query(
+      collection(firestore, 'assessments'),
+      where('playerId', '==', player.id),
+      where('coachId', '==', user.uid),
+      orderBy('timestamp', 'desc')
+    );
+  }, [firestore, user, player, isLive]);
+
+  const { data: previousAssessments, isLoading: isLoadingAssessments } = useCollection(previousAssessmentsQuery);
 
   const [feedback, setFeedback] = useState('');
   const [skillRatings, setSkillRatings] = useState<Record<string, number>>({});
@@ -276,6 +290,35 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
                     </Button>
                   </div>
                   </fieldset>
+
+                  {!isDemo && !isLoadingAssessments && previousAssessments && previousAssessments.length > 0 && (
+                    <div className="mt-6 pt-6 border-t">
+                      <Accordion type="single" collapsible>
+                        <AccordionItem value="previous-feedback">
+                          <AccordionTrigger>Previous Feedback ({previousAssessments.length})</AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-4">
+                              {previousAssessments.map((assessment: Assessment) => (
+                                <div key={assessment.id} className="p-3 bg-muted/50 rounded-lg">
+                                    <p className="text-xs text-muted-foreground mb-2">{new Date(assessment.timestamp).toLocaleString()}</p>
+                                    <p className="text-sm mb-2 whitespace-pre-wrap">{assessment.feedbackText}</p>
+                                    <Separator className="my-2" />
+                                    <div className="space-y-1">
+                                        {Object.entries(assessment.skillRatings).map(([skill, rating]) => (
+                                            <p key={skill} className="text-xs">
+                                                <span className="font-medium">{skill}:</span> {rating}/10
+                                            </p>
+                                        ))}
+                                    </div>
+                                </div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    </div>
+                  )}
+
                 </CardContent>
               </Card>
             </div>
@@ -284,3 +327,5 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
       </main>
   );
 }
+
+    

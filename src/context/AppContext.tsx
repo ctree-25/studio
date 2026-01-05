@@ -9,7 +9,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 const playerAvatar = PlaceHolderImages.find(p => p.id === 'player-avatar');
 
 export interface Assessment {
-    id: string;
+    id?: string;
     coachId: string;
     playerId: string;
     feedbackText: string;
@@ -156,3 +156,5 @@ export const useAppContext = () => {
   }
   return context;
 };
+
+    
