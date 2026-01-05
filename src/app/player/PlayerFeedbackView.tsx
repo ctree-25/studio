@@ -36,6 +36,20 @@ const getLatestAssessmentsPerCoach = (assessments: Assessment[]): Assessment[] =
     return Object.values(latestAssessments);
 };
 
+const groupAssessmentsByCoach = (assessments: Assessment[]): Record<string, Assessment[]> => {
+    if (!assessments || assessments.length === 0) return {};
+    
+    return assessments.reduce((acc, assessment) => {
+        if (!acc[assessment.coachId]) {
+            acc[assessment.coachId] = [];
+        }
+        acc[assessment.coachId].push(assessment);
+        // Sort each coach's assessments by timestamp descending
+        acc[assessment.coachId].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        return acc;
+    }, {} as Record<string, Assessment[]>);
+};
+
 
 const extractAverageSkillData = (assessments: Assessment[]) => {
     if (!assessments || assessments.length === 0) return [];
@@ -95,7 +109,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
     const { updatePlayer, getPlayer } = useAppContext();
     const firestore = useFirestore();
     const [isLoading, setIsLoading] = useState(false);
-    const [replies, setReplies] = useState<Record<number, string>>({});
+    const [replies, setReplies] = useState<Record<string, string>>({});
     const { toast } = useToast();
     
     // For the demo view, we pull the mock player from the context which has assessments.
@@ -112,16 +126,16 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
 
     const { data: liveAssessments, isLoading: isLoadingAssessments } = useCollection(assessmentsQuery);
 
-    const handleReplyChange = (index: number, text: string) => {
-        setReplies(prev => ({...prev, [index]: text}));
+    const handleReplyChange = (coachId: string, text: string) => {
+        setReplies(prev => ({...prev, [coachId]: text}));
     }
 
-    const handleReplySubmit = (index: number) => {
+    const handleReplySubmit = (coachId: string, coachIndex: number) => {
         toast({
             title: "Reply Sent!",
-            description: `Your message has been sent to Coach #${index + 1}.`,
+            description: `Your message has been sent to Coach #${coachIndex + 1}.`,
         });
-        setReplies(prev => ({...prev, [index]: ''}));
+        setReplies(prev => ({...prev, [coachId]: ''}));
     }
 
     if (!player) {
@@ -133,15 +147,16 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
     }
     
     const allAssessments = isDemo ? (demoPlayer?.assessments || []) : (liveAssessments as Assessment[] || []);
-    const coachAssessments = getLatestAssessmentsPerCoach(allAssessments);
+    const coachAssessmentsForChart = getLatestAssessmentsPerCoach(allAssessments);
+    const groupedAssessments = groupAssessmentsByCoach(allAssessments);
     const currentTrainingPlan = isDemo ? demoPlayer?.trainingPlan : player.trainingPlan;
 
-    const averageSkillData = extractAverageSkillData(coachAssessments);
+    const averageSkillData = extractAverageSkillData(coachAssessmentsForChart);
     const overallScore = averageSkillData.length > 0
         ? averageSkillData.reduce((sum, { average }) => sum + average, 0) / averageSkillData.length
         : 0;
         
-    const feedbackForTrainingPlan = coachAssessments.map(a => a.feedbackText).join('\n\n');
+    const feedbackForTrainingPlan = coachAssessmentsForChart.map(a => a.feedbackText).join('\n\n');
 
     const handleGeneratePlan = async () => {
         if (!feedbackForTrainingPlan) {
@@ -198,7 +213,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
             </TabsList>
             <TabsContent value="skill-assessment">
                 <div className="space-y-8">
-                    {isLoadingAssessments && !isDemo ? <Skeleton className="w-full h-[300px]" /> : coachAssessments.length > 0 ? (
+                    {isLoadingAssessments && !isDemo ? <Skeleton className="w-full h-[300px]" /> : coachAssessmentsForChart.length > 0 ? (
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
                                 <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
@@ -226,7 +241,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                 </CardHeader>
                                 <CardContent>
                                     <Suspense fallback={<Skeleton className="w-full h-[450px]" />}>
-                                        <PlayerSkillChart assessments={coachAssessments} />
+                                        <PlayerSkillChart assessments={coachAssessmentsForChart} />
                                     </Suspense>
                                 </CardContent>
                             </Card>
@@ -242,19 +257,15 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                 {isLoadingAssessments && !isDemo ? <Skeleton className="w-full h-[200px]" /> : allAssessments && allAssessments.length > 0 ? (
                     <Card>
                         <CardContent className="space-y-6 pt-6">
-                            {allAssessments.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((assessment, index) => {
-                                const coach = isDemo ? mockCoachDetails[index % mockCoachDetails.length] : null;
+                            {Object.entries(groupedAssessments).map(([coachId, assessments], coachIndex) => {
+                                const coach = isDemo ? mockCoachDetails[coachIndex % mockCoachDetails.length] : null;
                                 const isD1Coach = coach?.level === 'College (D1)';
-                                const skillRatingsText = Object.entries(assessment.skillRatings)
-                                    .map(([skill, rating]) => `- <strong>${skill}:</strong> ${rating}/10`)
-                                    .join('\n');
-                                const body = `<strong class="text-primary">Assessment:</strong>\n${assessment.feedbackText}\n\n${skillRatingsText}`;
-                                
+
                                 return (
-                                <div key={assessment.id} className="p-4 border rounded-lg bg-muted/30">
+                                <div key={coachId} className="p-4 border rounded-lg bg-muted/30">
                                     <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
                                         <div className="flex-1">
-                                            <h4 className="font-bold text-lg">Coach #{index + 1}</h4>
+                                            <h4 className="font-bold text-lg">Coach #{coachIndex + 1}</h4>
                                         </div>
                                         {coach && (
                                             <div className="flex items-center gap-1 mt-2 sm:mt-0">
@@ -271,11 +282,26 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                             <p><strong>Placed Athletes At:</strong> {coach.placedLevel}</p>
                                         </div>
                                     )}
-                                    <p
-                                        className="whitespace-pre-wrap text-muted-foreground"
-                                        dangerouslySetInnerHTML={{ __html: body }}
-                                    />
-                                     <p className="text-xs text-muted-foreground/70 mt-4">{new Date(assessment.timestamp).toLocaleString()}</p>
+
+                                    <div className="space-y-4">
+                                        {assessments.map((assessment, assessmentIndex) => {
+                                            const skillRatingsText = Object.entries(assessment.skillRatings)
+                                                .map(([skill, rating]) => `- <strong>${skill}:</strong> ${rating}/10`)
+                                                .join('\n');
+                                            const body = `<strong class="text-primary">Assessment:</strong>\n${assessment.feedbackText}\n\n${skillRatingsText}`;
+
+                                            return (
+                                                <div key={assessment.id} className={assessmentIndex > 0 ? "pt-4 border-t border-border/50" : ""}>
+                                                    <p
+                                                        className="whitespace-pre-wrap text-muted-foreground"
+                                                        dangerouslySetInnerHTML={{ __html: body }}
+                                                    />
+                                                    <p className="text-xs text-muted-foreground/70 mt-4">{new Date(assessment.timestamp).toLocaleString()}</p>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                    
                                     {isDemo && (
                                         <div className="mt-4 pt-4 border-t border-border">
                                         {isD1Coach ? (
@@ -288,14 +314,14 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                         ) : (
                                             <>
                                                 <Textarea
-                                                    placeholder="Ask a follow-up question..."
-                                                    value={replies[index] || ''}
-                                                    onChange={(e) => handleReplyChange(index, e.target.value)}
+                                                    placeholder={`Ask Coach #${coachIndex + 1} a follow-up question...`}
+                                                    value={replies[coachId] || ''}
+                                                    onChange={(e) => handleReplyChange(coachId, e.target.value)}
                                                     className="mb-2"
                                                 />
                                                 <Button 
-                                                    onClick={() => handleReplySubmit(index)}
-                                                    disabled={!replies[index]}
+                                                    onClick={() => handleReplySubmit(coachId, coachIndex)}
+                                                    disabled={!replies[coachId]}
                                                     size="sm"
                                                 >
                                                     Reply
@@ -325,7 +351,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                         {!currentTrainingPlan ? (
                              <div className="text-center py-8">
                                 <p className="text-muted-foreground mb-4">Click the button to generate a new training plan based on your latest feedback.</p>
-                                <Button onClick={handleGeneratePlan} disabled={isLoading || coachAssessments.length === 0}>
+                                <Button onClick={handleGeneratePlan} disabled={isLoading || coachAssessmentsForChart.length === 0}>
                                     {isLoading ? <Loader2 className="animate-spin" /> : 'Generate Training Plan'}
                                 </Button>
                             </div>
@@ -368,5 +394,3 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
         </Tabs>
     );
 }
-
-    
