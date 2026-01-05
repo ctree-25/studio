@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PlayerOverallScore } from "@/components/PlayerOverallScore";
 import { useCollection, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from "@/firebase";
-import { collection, query, where, doc } from "firebase/firestore";
+import { collection, query, where, doc, getDoc } from "firebase/firestore";
 
 const getLatestAssessmentsPerCoach = (assessments: Assessment[]): Assessment[] => {
     if (!assessments || assessments.length === 0) return [];
@@ -149,7 +149,8 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
     const allAssessments = isDemo ? (demoPlayer?.assessments || []) : (liveAssessments as Assessment[] || []);
     const coachAssessmentsForChart = getLatestAssessmentsPerCoach(allAssessments);
     const groupedAssessments = groupAssessmentsByCoach(allAssessments);
-    const currentTrainingPlan = isDemo ? demoPlayer?.trainingPlan : player.trainingPlan;
+    const trainingPlansHistory = isDemo ? demoPlayer?.trainingPlans : player.trainingPlans;
+    const currentTrainingPlan = trainingPlansHistory && trainingPlansHistory.length > 0 ? trainingPlansHistory[trainingPlansHistory.length - 1] : undefined;
 
     const averageSkillData = extractAverageSkillData(coachAssessmentsForChart);
     const overallScore = averageSkillData.length > 0
@@ -175,17 +176,26 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
         });
 
         try {
-            const trainingPlan = await generateTrainingPlan({
+            const newTrainingPlan = await generateTrainingPlan({
                 coachFeedback: feedbackForTrainingPlan,
                 position: player.position,
             });
 
             if (isDemo) {
-                updatePlayer('mock-player-2', { trainingPlan });
+                const existingPlans = demoPlayer?.trainingPlans || [];
+                const updatedPlans = [...existingPlans, newTrainingPlan];
+                updatePlayer('mock-player-2', { trainingPlans: updatedPlans });
             } else if (user && firestore) {
                 const playerProfileRef = doc(firestore, 'playerProfiles', user.uid);
-                setDocumentNonBlocking(playerProfileRef, { trainingPlan }, { merge: true });
-                onProfileUpdate?.({ trainingPlan });
+                
+                // Get current training plans and append the new one
+                const docSnap = await getDoc(playerProfileRef);
+                const existingData = docSnap.data() as PlayerProfile | undefined;
+                const existingPlans = existingData?.trainingPlans || [];
+                const updatedPlans = [...existingPlans, newTrainingPlan];
+
+                setDocumentNonBlocking(playerProfileRef, { trainingPlans: updatedPlans }, { merge: true });
+                onProfileUpdate?.({ trainingPlans: updatedPlans });
             }
             
             toast({

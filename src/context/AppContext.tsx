@@ -29,7 +29,7 @@ export type PlayerProfile = {
   targetLevel: 'D1' | 'D2' | 'D3';
   preferredSchools: string;
   aiAnalysis?: AnalyzePlayerFootageOutput;
-  trainingPlan?: GenerateTrainingPlanOutput;
+  trainingPlans?: GenerateTrainingPlanOutput[];
   submitted: boolean;
   // This is now only used for mock data in the demo.
   assessments?: Assessment[];
@@ -38,7 +38,7 @@ export type PlayerProfile = {
 type AppContextType = {
   players: PlayerProfile[];
   getPlayer: (id: string) => PlayerProfile | undefined;
-  addPlayer: (player: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'videoDataUri' | 'trainingPlan'>) => PlayerProfile;
+  addPlayer: (player: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'videoDataUri' | 'trainingPlans'>) => PlayerProfile;
   updatePlayer: (playerId: string, updates: Partial<PlayerProfile>) => void;
 };
 
@@ -88,7 +88,7 @@ const MOCK_PLAYERS: PlayerProfile[] = [
                 skillRatings: { 'Setting Technique': 9, 'Footwork': 8, 'Decision Making': 7, 'Defense': 6, 'Serving': 7 },
             }
         ],
-        trainingPlan: {
+        trainingPlans: [{
           actionableSteps: [
             {
               title: "Improve Footwork Consistency",
@@ -117,14 +117,14 @@ const MOCK_PLAYERS: PlayerProfile[] = [
               url: "https://youtu.be/Uiv4rJZ6qtA?si=wDk5RPPAUBYWF73_"
             }
           ]
-        }
+        }]
     }
 ];
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [players, setPlayers] = useState<PlayerProfile[]>(MOCK_PLAYERS);
 
-  const addPlayer = (playerData: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'videoDataUri' | 'trainingPlan'>): PlayerProfile => {
+  const addPlayer = (playerData: Omit<PlayerProfile, 'id' | 'submitted' | 'aiAnalysis' | 'videoDataUri' | 'trainingPlans'>): PlayerProfile => {
     const newPlayer: PlayerProfile = {
         ...playerData,
         id: `player-${Date.now()}`,
