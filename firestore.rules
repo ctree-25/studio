@@ -103,9 +103,11 @@ service cloud.firestore {
       // An assessment can be read by the player it belongs to, or the coach who wrote it.
       allow get: if isSignedIn() && (request.auth.uid == resource.data.playerId || request.auth.uid == resource.data.coachId);
 
-      // A user can list assessments if they are the player OR the coach. This rule is checked
-      // against every document that the client-side query attempts to access.
-      allow list: if isSignedIn() && (resource.data.playerId == request.auth.uid || resource.data.coachId == request.auth.uid);
+      // A user can list assessments only if their query filters for assessments where
+      // they are the player OR the coach. This rule works in conjunction with client-side queries.
+      allow list: if isSignedIn() && 
+                    (request.query.get('where')[0][0] == 'playerId' && request.query.get('where')[0][2] == request.auth.uid ||
+                     request.query.get('where')[0][0] == 'coachId' && request.query.get('where')[0][2] == request.auth.uid);
 
       // Updates and deletes are disallowed to maintain an audit trail.
       allow update, delete: if false;
