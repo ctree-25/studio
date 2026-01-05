@@ -69,17 +69,17 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
   const demoPlayer = isDemo ? getPlayer(playerId) : null;
   const player = isDemo ? demoPlayer : livePlayer;
 
-  const previousAssessmentsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !player || !isLive) return null;
-    return query(
-      collection(firestore, 'assessments'),
-      where('playerId', '==', player.id),
-      where('coachId', '==', user.uid),
-      orderBy('timestamp', 'desc')
-    );
-  }, [firestore, user, player, isLive]);
+  // const previousAssessmentsQuery = useMemoFirebase(() => {
+  //   if (!firestore || !user || !player || !isLive) return null;
+  //   return query(
+  //     collection(firestore, 'assessments'),
+  //     where('playerId', '==', player.id),
+  //     where('coachId', '==', user.uid),
+  //     orderBy('timestamp', 'desc')
+  //   );
+  // }, [firestore, user, player, isLive]);
 
-  const { data: previousAssessments, isLoading: isLoadingAssessments } = useCollection(previousAssessmentsQuery);
+  // const { data: previousAssessments, isLoading: isLoadingAssessments } = useCollection(previousAssessmentsQuery);
 
   const [feedback, setFeedback] = useState('');
   const [skillRatings, setSkillRatings] = useState<Record<string, number>>({});
@@ -291,7 +291,7 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
                   </div>
                   </fieldset>
 
-                  {!isDemo && !isLoadingAssessments && previousAssessments && previousAssessments.length > 0 && (
+                  {/* {!isDemo && !isLoadingAssessments && previousAssessments && previousAssessments.length > 0 && (
                     <div className="mt-6 pt-6 border-t">
                       <Accordion type="single" collapsible>
                         <AccordionItem value="previous-feedback">
@@ -317,7 +317,7 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
                         </AccordionItem>
                       </Accordion>
                     </div>
-                  )}
+                  )} */}
 
                 </CardContent>
               </Card>
@@ -327,5 +327,3 @@ export function PlayerAssessmentPage({ playerId, onBack, isDemo = false }: Playe
       </main>
   );
 }
-
-    
