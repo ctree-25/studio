@@ -106,9 +106,9 @@ service cloud.firestore {
       // A user can list assessments if they are the player OR the coach. This also covers compound queries
       // where the user is querying for assessments they wrote for a specific player.
       allow list: if isSignedIn() && 
-                    (request.query.where.playerId == request.auth.uid || 
-                     request.query.where.coachId == request.auth.uid ||
-                     (request.query.where.coachId == request.auth.uid && request.query.where.playerId != null));
+                    (request.query.resource.data.playerId == request.auth.uid || 
+                     request.query.resource.data.coachId == request.auth.uid ||
+                     (request.query.resource.data.coachId == request.auth.uid && request.query.resource.data.playerId != null));
 
       // Updates and deletes are disallowed to maintain an audit trail.
       allow update, delete: if false;
