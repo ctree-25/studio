@@ -21,6 +21,22 @@ import { PlayerOverallScore } from "@/components/PlayerOverallScore";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 
+const getLatestAssessmentsPerCoach = (assessments: Assessment[]): Assessment[] => {
+    if (!assessments || assessments.length === 0) return [];
+
+    const latestAssessments: Record<string, Assessment> = {};
+
+    assessments.forEach(assessment => {
+        const existingAssessment = latestAssessments[assessment.coachId];
+        if (!existingAssessment || new Date(assessment.timestamp) > new Date(existingAssessment.timestamp)) {
+            latestAssessments[assessment.coachId] = assessment;
+        }
+    });
+
+    return Object.values(latestAssessments);
+};
+
+
 const extractAverageSkillData = (assessments: Assessment[]) => {
     if (!assessments || assessments.length === 0) return [];
 
@@ -116,7 +132,8 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
         );
     }
     
-    const coachAssessments = isDemo ? (demoPlayer?.assessments || []) : (liveAssessments as Assessment[] || []);
+    const allAssessments = isDemo ? (demoPlayer?.assessments || []) : (liveAssessments as Assessment[] || []);
+    const coachAssessments = getLatestAssessmentsPerCoach(allAssessments);
     const currentTrainingPlan = isDemo ? demoPlayer?.trainingPlan : player.trainingPlan;
 
     const averageSkillData = extractAverageSkillData(coachAssessments);
@@ -222,10 +239,10 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                   </div>
             </TabsContent>
             <TabsContent value="coach-feedback">
-                {isLoadingAssessments && !isDemo ? <Skeleton className="w-full h-[200px]" /> : coachAssessments && coachAssessments.length > 0 ? (
+                {isLoadingAssessments && !isDemo ? <Skeleton className="w-full h-[200px]" /> : allAssessments && allAssessments.length > 0 ? (
                     <Card>
                         <CardContent className="space-y-6 pt-6">
-                            {coachAssessments.map((assessment, index) => {
+                            {allAssessments.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((assessment, index) => {
                                 const coach = isDemo ? mockCoachDetails[index % mockCoachDetails.length] : null;
                                 const isD1Coach = coach?.level === 'College (D1)';
                                 const skillRatingsText = Object.entries(assessment.skillRatings)
@@ -234,7 +251,7 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
                                 const body = `<strong class="text-primary">Assessment:</strong>\n${assessment.feedbackText}\n\n${skillRatingsText}`;
                                 
                                 return (
-                                <div key={index} className="p-4 border rounded-lg bg-muted/30">
+                                <div key={assessment.id} className="p-4 border rounded-lg bg-muted/30">
                                     <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
                                         <div className="flex-1">
                                             <h4 className="font-bold text-lg">Coach #{index + 1}</h4>
@@ -351,3 +368,5 @@ export function PlayerFeedbackView({ player, isDemo = false }: { player: PlayerP
         </Tabs>
     );
 }
+
+    
