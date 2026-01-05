@@ -364,7 +364,7 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
                         {!currentTrainingPlan ? (
                              <div className="text-center py-8">
                                 <p className="text-muted-foreground mb-4">Click the button to generate new training tips based on your latest feedback.</p>
-                                <Button onClick={handleGeneratePlan} disabled={isLoading || coachAssessmentsForChart.length === 0}>
+                                <Button onClick={handleGeneratePlan} disabled={isDemo || isLoading || coachAssessmentsForChart.length === 0}>
                                     {isLoading ? <Loader2 className="animate-spin" /> : <>✨ Generate Training Tips</>}
                                 </Button>
                             </div>
@@ -396,7 +396,7 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
                                     </ul>
                                 </div>
                                 <Separator />
-                                 <Button onClick={handleGeneratePlan} disabled={isLoading} variant="outline" className="w-full">
+                                 <Button onClick={handleGeneratePlan} disabled={isDemo || isLoading} variant="outline" className="w-full">
                                     {isLoading ? <Loader2 className="animate-spin" /> : <>✨ Generate New Training Tips</>}
                                  </Button>
                             </div>
