@@ -210,7 +210,9 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
             <TabsList className="grid w-full grid-cols-3 h-auto">
                 <TabsTrigger value="skill-assessment" className="whitespace-normal h-auto">Skill Assessment</TabsTrigger>
                 <TabsTrigger value="coach-feedback" className="whitespace-normal h-auto">Coach Feedback</TabsTrigger>
-                <TabsTrigger value="training-plan" className="whitespace-normal h-auto">Training Tips</TabsTrigger>
+                <TabsTrigger value="training-tips" className="whitespace-normal h-auto inline-flex items-center gap-2">
+                    <Star className="w-4 h-4" /> Training Tips
+                </TabsTrigger>
             </TabsList>
             <TabsContent value="skill-assessment">
                 <div className="space-y-8">
@@ -346,14 +348,14 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
                     </Card>
                 )}
             </TabsContent>
-            <TabsContent value="training-plan">
+            <TabsContent value="training-tips">
                  <Card>
                     <CardContent className="pt-6">
                         {!currentTrainingPlan ? (
                              <div className="text-center py-8">
                                 <p className="text-muted-foreground mb-4">Click the button to generate new training tips based on your latest feedback.</p>
                                 <Button onClick={handleGeneratePlan} disabled={isLoading || coachAssessmentsForChart.length === 0}>
-                                    {isLoading ? <Loader2 className="animate-spin" /> : 'Generate Training Tips'}
+                                    {isLoading ? <Loader2 className="animate-spin" /> : <><Star className="w-4 h-4 mr-2" />Generate Training Tips</>}
                                 </Button>
                             </div>
                         ) : (
@@ -385,7 +387,7 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
                                 </div>
                                 <Separator />
                                  <Button onClick={handleGeneratePlan} disabled={isLoading} variant="outline" className="w-full">
-                                    {isLoading ? <Loader2 className="animate-spin" /> : 'Generate New Training Tips'}
+                                    {isLoading ? <Loader2 className="animate-spin" /> : <><Star className="w-4 h-4 mr-2" />Generate New Training Tips</>}
                                  </Button>
                             </div>
                         )}
@@ -395,3 +397,5 @@ export function PlayerFeedbackView({ player, isDemo = false, onProfileUpdate }: 
         </Tabs>
     );
 }
+
+    
